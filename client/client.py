@@ -4,16 +4,18 @@ class OTC_Client(object):
     ## A client is initialized with the address of the server it intends to connect to
     
     ## TODO: fix the initialization with pad. Client shouldn't get access to pad
-    def __init__(self,server_address,device_id):
+    def __init__(self,server_address,username=None,device_id):
         self.encrypt_index = 0 
         self.device_id = device_id
         self.decrypt_index = None # TODO: what is a good value for the decrypt index?
-        self.connect(server_address)
-        raise NotImplementedError("TODO: write a client")
+        if username==None:
+            self.username = self.getUserId()
+        else:
+            self.username = username
+        self.connect()
     def send(self,message,target):
         payload = {'message':message,'target':target}
-        r = request.post(self.server_address,data=payload)
-        raise NotImplementedError("TODO: write send method")
+        r = requests.post(self.server_address,data=payload)
     def recieve(self):
         raise NotImplementedError("TODO: write recieve")
     def decrypt(self,message, pad_index):
@@ -21,16 +23,30 @@ class OTC_Client(object):
         raise NotImplementedError("TODO: clients need to decrypt messages")
     def encrypt(self,encrypt, pad_index):
         raise NotImplementedError("TODO: clients need to encrypt messages")
-    def connect(self,server_address):
-        self.server_address = server_address
+    def connect(self):
         payload = {'message':"connect"}
-        r = request.post(self.server,data=payload)
+        r = requests.post(self.server_address,data=payload)
         #TODO: handle response from server
-    def readFromDevice():
+    def readFromDevice(self):
         raise NotImplementedError("TODO: clients need to be able to read from their device")
     #TODO: http form maybe
+    def getUserId(self):
+        raise NotImplementedError("TODO: clients need to be able to fetch user id from their device")
     def getMessages(self,name,cursor):
+        payload={'uid':name,'last_seen':cursor}
+        r = requests.post(self.server_address,parms=payload)
+        return r
         raise NotImplementedError("TODO: clients need to be able to poll messages")
+    def run(self):
+        cursor = 0
+        while (true):
+            target=input("Who is your target: ")
+            message=input("What is your message: ")
+            self.send(message,target)
+            print "Message sent!"
+             # GET messages
+            response = self.getMessages(self.username,cursor)
+            
 if __name__ == "__main__":
     
     if (len(sys.argv)<3):
