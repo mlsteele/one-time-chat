@@ -24,6 +24,8 @@ class OTC_Client(object):
     def connect(self,server_address):
         self.server_address = server_address
         raise NotImplementedError("TODO:clients need to be able to connect to server")
+    def readFromDevice():
+        raise NotImplementedError("TODO: clients need to be able to read from their device")
 if __name__ == "__main__":
     
     if (len(sys.argv)<3):
