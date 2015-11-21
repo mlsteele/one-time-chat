@@ -26,6 +26,9 @@ class OTC_Client(object):
         raise NotImplementedError("TODO:clients need to be able to connect to server")
     def readFromDevice():
         raise NotImplementedError("TODO: clients need to be able to read from their device")
+    #TODO: http form maybe
+    def getMessages(self,name,cursor):
+        raise NotImplementedError("TODO: clients need to be able to poll messages")
 if __name__ == "__main__":
     
     if (len(sys.argv)<3):
@@ -33,3 +36,4 @@ if __name__ == "__main__":
     server_address = sys.argv[1]
     pad_file = sys.argv[2]
     client = OTC_Client(server_address,pad_file)
+    client.send("HELLO","alice")
