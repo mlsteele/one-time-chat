@@ -1,6 +1,9 @@
 import requests
 import sys
 class OTC_Client(object):
+    ## A client is initialized with the address of the server it intends to connect to
+    
+    ## TODO: fix the initialization with pad. Client shouldn't get access to pad
     def __init__(self,server_address,pad):
         self.encrypt_index = 0 
         self.pad = pad
