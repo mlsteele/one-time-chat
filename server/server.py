@@ -1,7 +1,29 @@
 from flask import Flask, request, jsonify
+from flask.ext.sqlalchemy import SQLAlchemy
 import base64
 
 app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
+
+class Message(db.Model):
+    __tablename__ = "message"
+    id = db.Column(db.Integer, primary_key=True)
+    # Reference number for the message.
+    ref = db.Column(db.Integer, nullable=False, index=True, autoincrement=True)
+    # User ID of the recipient.
+    recipient_uid = db.Column(db.String(128), nullable=False, index=True)
+    # User ID of the sender.
+    sender_uid = db.Column(db.String(128), nullable=False)
+    contents = db.Column(db.String(120), nullable=False)
+    # When the message entry was created on the server.
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+    def __repr__(self):
+        return "<Message {} for {}>".format(self.ref, self.recipient_uid)
+
+db.create_all()
 
 class APIException(Exception):
     def __init__(self, status_code, message):
