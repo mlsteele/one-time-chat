@@ -4,7 +4,7 @@ class OTC_Client(object):
     ## A client is initialized with the address of the server it intends to connect to
     
     ## TODO: fix the initialization with pad. Client shouldn't get access to pad
-    def __init__(self,server_address,username=None,device_id):
+    def __init__(self,server_address,device_id,username=None,):
         self.encrypt_index = 0 
         self.device_id = device_id
         self.decrypt_index = None # TODO: what is a good value for the decrypt index?
@@ -12,6 +12,7 @@ class OTC_Client(object):
             self.username = self.getUserId()
         else:
             self.username = username
+        self.server_address = server_address
         self.connect()
     def send(self,message,target):
         payload = {'message':message,'target':target}
@@ -34,12 +35,12 @@ class OTC_Client(object):
         raise NotImplementedError("TODO: clients need to be able to fetch user id from their device")
     def getMessages(self,name,cursor):
         payload={'uid':name,'last_seen':cursor}
-        r = requests.post(self.server_address,parms=payload)
+        r = requests.post(self.server_address+"/getmessages",params=payload)
         return r
         raise NotImplementedError("TODO: clients need to be able to poll messages")
     def run(self):
         cursor = 0
-        while (true):
+        while (True):
             target=input("Who is your target: ")
             message=input("What is your message: ")
             self.send(message,target)
