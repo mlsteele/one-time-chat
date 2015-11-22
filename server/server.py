@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
+import wtforms
 import base64
 
 app = Flask(__name__)
@@ -7,18 +8,34 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
+def interact():
+    """Drop to an interactive REPL."""
+    import code, inspect
+    frame = inspect.currentframe()
+    prevlocals = frame.f_back.f_locals
+    replvars = globals().copy()
+    replvars.update(prevlocals)
+    code.InteractiveConsole(locals=replvars).interact()
+
 class Message(db.Model):
     __tablename__ = "message"
-    id = db.Column(db.Integer, primary_key=True)
     # Reference number for the message.
-    ref = db.Column(db.Integer, nullable=False, index=True, autoincrement=True)
+    ref = db.Column(db.Integer, primary_key=True, index=True, autoincrement=True)
     # User ID of the recipient.
     recipient_uid = db.Column(db.String(128), nullable=False, index=True)
     # User ID of the sender.
     sender_uid = db.Column(db.String(128), nullable=False)
-    contents = db.Column(db.String(120), nullable=False)
+    contents = db.Column(db.LargeBinary)
     # When the message entry was created on the server.
     created_at = db.Column(db.DateTime, default=db.func.now())
+
+    def serialize(self):
+        return {
+            "ref": self.ref,
+            "recipient_uid": self.recipient_uid,
+            "sender_uid": self.sender_uid,
+            "contents": self.contents,
+        }
 
     def __repr__(self):
         return "<Message {} for {}>".format(self.ref, self.recipient_uid)
@@ -47,6 +64,11 @@ def handle_invalid_usage(error):
 def home():
     return "One Time Chat API Server"
 
+class SendForm(wtforms.Form):
+    recipient_uid = wtforms.StringField("recipient_uid")
+    sender_uid = wtforms.StringField("sender_uid")
+    contents = wtforms.StringField("contents")
+
 @app.route("/send", methods=["GET", "POST"])
 def send():
     """
@@ -54,18 +76,27 @@ def send():
     Places the message in that users's mailbox.
     """
     if request.method != "POST":
-        raise APIException(400, "Message send requests must be HTTP POST.")
+        raise APIException(400, "Message send requests must be made via HTTP POST.")
+    form = SendForm(request.form)
+    if not form.validate():
+        raise APIException(400, "Invalid form.")
 
-    # TODO(miles): this will actually be a form in a sec.
-    message = request.get_data()
+    # Add a message to the db.
+    message = Message()
+    message.recipient_uid = form.recipient_uid.data
+    message.sender_uid = form.sender_uid.data
+    message.contents = form.contents.data
+    db.session.add(message)
+    db.session.commit()
 
     # Echo tail is the last 10 bytes of the received message.
     # This exists for debugging.
-    echo_tail = message[-10:]
+    echo_tail = message.contents[-10:]
 
     resdict = {
         "received": True,
         "echo_tail": echo_tail,
+        "ref": message.ref,
     }
     return jsonify(resdict)
 
@@ -85,21 +116,21 @@ def getmessages():
     if not last_seen:
         raise APIException(400, "getmessages missing required field: last_seen")
 
-    # TODO(miles): remove dummy data
-    messages = ["hi", "there"]
-    last_message_counter = 5
+    # TODO(miles): use last seen
+    messages = (db.session.query(Message)
+                .filter(Message.recipient_uid == uid)
+                .filter(Message.ref > last_seen)
+                .order_by(Message.ref).all())
 
     resdict = {
         # ID of the user the messages were sent to.
-        "receiver_uid": uid,
+        "recipient_uid": uid,
         # How many messages in this response.
         "count": len(messages),
         # Array of messages.
-        "messages": messages,
+        "messages": [m.serialize() for m in messages],
         # Whether this response includes all known messages after last_seen.
         "complete": True,
-        # The reference number of the last message shown.
-        "last_ref": last_message_counter,
     }
     return jsonify(resdict)
 
