@@ -64,6 +64,14 @@ def handle_invalid_usage(error):
 def home():
     return "One Time Chat API Server"
 
+@app.route("/check")
+def check():
+    """Check that the server is up."""
+    resdict = {
+        "status": "ok",
+    }
+    return jsonify(resdict)
+
 class SendForm(wtforms.Form):
     recipient_uid = wtforms.StringField("recipient_uid")
     sender_uid = wtforms.StringField("sender_uid")
@@ -88,6 +96,10 @@ def send():
     message.contents = form.contents.data
     db.session.add(message)
     db.session.commit()
+
+    print "message sent ({}) -> ({})".format(
+        message.sender_uid,
+        message.recipient_uid)
 
     # Echo tail is the last 10 bytes of the received message.
     # This exists for debugging.
