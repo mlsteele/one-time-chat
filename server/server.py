@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.autodoc import Autodoc
 import wtforms
 import base64
 
@@ -7,6 +8,7 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
+auto = Autodoc(app)
 
 def interact():
     """Drop to an interactive REPL."""
@@ -61,12 +63,19 @@ def handle_invalid_usage(error):
     return response
 
 @app.route("/")
+@auto.doc()
 def home():
-    return "One Time Chat API Server"
+    """Default page with documentation listing.
+    """
+    return auto.html()
 
 @app.route("/check")
+@auto.doc()
 def check():
-    """Check that the server is up."""
+    """Check that the server is up.
+    
+    Returns {"status": "ok"}
+    """
     resdict = {
         "status": "ok",
     }
@@ -77,11 +86,22 @@ class SendForm(wtforms.Form):
     sender_uid = wtforms.StringField("sender_uid")
     contents = wtforms.StringField("contents")
 
-@app.route("/send", methods=["GET", "POST"])
+@app.route("/send", methods=["POST"])
+@auto.doc()
 def send():
     """
     Send a message to a user.
     Places the message in that users's mailbox.
+    
+    Takes a POST form:
+    - recipient_uid: Who the message is for.
+    - sender_uid: Who is sending the message.
+    - contents: The contents of the message.
+    
+    Returns json with keys:
+    - received: true
+    - echo_tail: The last 10 bytes of the received message (for debugging).
+    - ref: The ref number of the created message.
     """
     if request.method != "POST":
         raise APIException(400, "Message send requests must be made via HTTP POST.")
@@ -113,10 +133,23 @@ def send():
     return jsonify(resdict)
 
 @app.route("/getmessages", methods=["GET"])
+@auto.doc()
 def getmessages():
     """
     Get all messages destined for a certain user.
     Only returns messages starting at a certain message reference number.
+    
+    Takes GET query parameters:
+    - recipient_uid: Who the messages are for.
+    - start_ref: The first ref to receive (inclusive, minimum 0).
+    - maxcount: (Optional) maximum number of messages to return.
+
+    Returns json with keys:
+    - recipient_uid
+    - count: How many messages are in the response.
+    - messages: List of messages contents (strings).
+    - complete: Whether all messages since start_ref were returned.
+                (Always true if maxcount is not provided)
     """
     # ID of the user receiving the message.
     recipient_uid = request.args.get("recipient_uid")
