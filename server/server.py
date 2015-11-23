@@ -104,33 +104,41 @@ def send():
 def getmessages():
     """
     Get all messages destined for a certain user.
-    Only returns messages since a certain message reference number.
+    Only returns messages starting at a certain message reference number.
     """
     # ID of the user receiving the message.
-    uid = request.args.get("uid")
+    recipient_uid = request.args.get("recipient_uid")
     # The reference number of the last-seen message.
-    last_seen = request.args.get("last_seen")
+    start_ref = request.args.get("start_ref")
+    # The maximum number of messages to return (optional).
+    maxcount = request.args.get("maxcount")
+    maxcount = int(maxcount) if maxcount != None else None
 
-    if not uid:
-        raise APIException(400, "getmessages missing required field: uid")
-    if not last_seen:
-        raise APIException(400, "getmessages missing required field: last_seen")
+    if not recipient_uid:
+        raise APIException(400, "getmessages missing required field: recipient_uid")
+    if not start_ref:
+        raise APIException(400, "getmessages missing required field: start_ref")
 
-    # TODO(miles): use last seen
     messages = (db.session.query(Message)
-                .filter(Message.recipient_uid == uid)
-                .filter(Message.ref > last_seen)
+                .filter(Message.recipient_uid == recipient_uid)
+                .filter(Message.ref >= start_ref)
                 .order_by(Message.ref).all())
+
+    if maxcount != None and len(messages) > maxcount:
+        complete = False
+        messages = messages[:maxcount]
+    else:
+        complete = True
 
     resdict = {
         # ID of the user the messages were sent to.
-        "recipient_uid": uid,
+        "recipient_uid": recipient_uid,
         # How many messages in this response.
         "count": len(messages),
         # Array of messages.
         "messages": [m.serialize() for m in messages],
-        # Whether this response includes all known messages after last_seen.
-        "complete": True,
+        # Whether this response includes all known messages starting from start_ref.
+        "complete": complete,
     }
     return jsonify(resdict)
 
