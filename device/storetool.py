@@ -54,21 +54,29 @@ def make_random_blob(f, n_bytes=KiB, rservice="random"):
     log("Target file: {}".format(f.name))
     log()
 
+    # Will store # of bytes generated
+    n = 0
     # Time and execute random generation
     t1 = time.time()
-    for i in range(n_Kbytes):
+    while(True):
         with open("/dev/" + rservice, "rb") as rand:
             # So there's usually around 3000 bits of entropy
             #  available (4096 at most). That's 512 bytes.
             #  I don't know why but 1024 bytes at a time seems
             #  to work the best.
-            randobytes = repr(rand.read(KiB))
+            nbytes2write = KiB if n_bytes - n >= KiB else n_bytes - n
+            randobytes = repr(rand.read(nbytes2write))
             f.write(randobytes)
-            log("Wrote kilobyte # {}".format(i), 1)
-            log("Wrote megabyte # {}".format(i/KiB), 0, (i+1)%n_Kbytes==0)
-    with open("/dev/" + rservice, "rb") as rand:
-        randobytes = repr(rand.read(n_leftoverbytes))
-        f.write(randobytes)
+            n += nbytes2write
+            log("Wrote kilobyte chunk {}/{}"
+                .format(n/KiB,(n_bytes+KiB-1)/KiB), 2, n%KiB==0)
+            log("Wrote final {} bytes"
+                .format(nbytes2write), 2, n%KiB!=0)
+            log("Wrote megabyte chunk {}/{}"
+                .format(n/MiB,(n_bytes+MiB-1)/MiB), 0, n%MiB==0)
+            if n >= n_bytes:
+                break
+
     t2 = time.time()
 
     log()
@@ -122,7 +130,7 @@ if __name__ == "__main__":
     rservice = args["--service"]
     verbose = args["--verbose"]
     
-    # Start input validation:
+    # Input validation:
     try:
         n_bytes = int(n_bytes)
         if n_bytes < 0:
@@ -132,7 +140,6 @@ if __name__ == "__main__":
     if rservice not in ["random","urandom"]:
         exit("'{}' is not a valid service. ".format(rservice) +
              "Service must be one of {random,urandom}")
-    # End input validation
 
     DEBUG = 2 if verbose else 0
     with open(filepath, "wb") as f:
