@@ -42,3 +42,6 @@ Pings should work now.
 ping 10.0.0.2 # from the laptop
 ping 10.0.0.1 # from the rpi
 ```
+
+# Useful Resources
+[https://askubuntu.com/questions/22835/how-to-network-two-ubuntu-computers-using-ethernet-without-a-router](AskUbuntu: How to network two ubuntu computers using ethernet without a router)
