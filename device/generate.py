@@ -65,7 +65,7 @@ def make_random_blob(f, n_bytes=KiB, rservice="random"):
             #  I don't know why but 1024 bytes at a time seems
             #  to work the best.
             nbytes2write = KiB if n_bytes - n >= KiB else n_bytes - n
-            randobytes = repr(rand.read(nbytes2write))
+            randobytes = rand.read(nbytes2write)
             f.write(randobytes)
             n += nbytes2write
             log("Wrote kilobyte chunk {}/{}"
