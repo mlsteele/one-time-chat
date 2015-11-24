@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+"""
+"""
+import rpcmethods
+from flask import Flask, request, jsonify
+import os
+import inspect
+
+app = Flask(__name__)
+
+@app.route("/runrpc", methods=["POST"])
+def runrpc():
+    call = request.json
+
+    try:
+        method = getattr(rpcmethods, call["method"])
+    except AttributeError:
+        return jsonify({"error": "no such rpc method"})
+
+    # Only allow methods of rpcmethods to be called.
+    if not inspect.isfunction(method):
+        return jsonify({"error": "requested rpc value is not a method"})
+
+    try:
+        result = method(*call["args"], **call["kwargs"])
+        return jsonify({"return": result})
+    except Exception as exc:
+        return jsonify({"error": "rpc call threw an exception"})
+
+
+if __name__ == "__main__":
+    debug = os.environ["DEBUG"] == "true"
+    print "debug =", debug
+    app.run(host="0.0.0.0", port=9051, debug=debug)
