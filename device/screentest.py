@@ -21,7 +21,7 @@ os.environ["SDL_MOUSEDEV"] = eventX
 pygame.init()
 
 # set up the window
-screen = pygame.display.set_mode((320, 240), 0, 32)
+screen = pygame.display.set_mode((320, 240), pygame.FULLSCREEN, 32)
 pygame.display.set_caption('Drawing')
 
 # set up the colors
@@ -33,24 +33,17 @@ BLUE  = (  0,   0, 255)
 CYAN  = (  0, 255, 255)
 MAGENTA=(255,   0, 255)
 YELLOW =(255, 255,   0)
+SOOTHBLUE = (0, 56, 87)
 
 # Fill background
 background = pygame.Surface(screen.get_size())
 background = background.convert()
-background.fill(WHITE)
-box = pygame.draw.rect(background, YELLOW,(0, 0, 40, 240))
-box = pygame.draw.rect(background,  CYAN, (40, 0, 40, 240))
-box = pygame.draw.rect(background, GREEN, (80, 0, 40, 240))
-box = pygame.draw.rect(background,MAGENTA,(120, 0, 40, 240))
-box = pygame.draw.rect(background, RED,   (160, 0, 40, 240))
-box = pygame.draw.rect(background, BLUE  ,(200, 0, 40, 240))
-box = pygame.draw.rect(background, BLACK ,(240, 0, 40, 240))
+background.fill(SOOTHBLUE)
 
 # Display some text
 font = pygame.font.Font(None, 36)
-text = font.render("Touch here", 1, (BLACK))
-#text = pygame.transform.rotate(text,270) 
-textpos = text.get_rect(centerx=background.get_width()/2,centery=background.get_height()/2)
+text = font.render("Locked", 1, WHITE)
+textpos = text.get_rect(centerx=background.get_width()/2, centery=background.get_height()/2)
 background.blit(text, textpos)
 
 screen.blit(background, (0, 0))
