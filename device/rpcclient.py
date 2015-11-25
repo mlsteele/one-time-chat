@@ -34,6 +34,7 @@ class RpcClient(object):
 
 
 if __name__ == "__main__":
+    """Example usage."""
     rpcclient = RpcClient("http://localhost:9051")
     print rpcclient.echo("ABC", "DEF", x=1, y=2)
     print rpcclient.add(3, 5)
