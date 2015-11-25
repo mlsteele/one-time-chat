@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 """
 Usage:
- storetool.py NBYTES [-v | --verbose] [-s SVC] [-f FILE]
+ storetool.py (-b NBYTES | -k NKBYTES| -m NMBYTES)
+              [-v | --verbose] [-s SVC] [-f FILE]
  storetool.py (-h | --help)
 
-Arguments:
- NBYTES  Number of bytes of randomness to generate
-
 Options:
+-b NBYTES             Number of bytes to generate
+-k NKBYTES            Number of kibibytes to generate
+-m NMBYTES            Number of mebibytes to generate
 -s SVC --service=SVC  RNG service to use; must be either random
                       or urandom. [default: urandom]
 -f FILE --file=FILE   Output file [default: random.store]
@@ -125,14 +126,24 @@ def predict_blob_value(index):
 if __name__ == "__main__":
     args = docopt(__doc__)
     
-    n_bytes = args["NBYTES"]
     filepath = args["--file"]
     rservice = args["--service"]
     verbose = args["--verbose"]
     
+    _units = ""
+    if args["-b"]:
+        _units = "-b"
+        _multFactor = 1
+    elif args["-k"]:
+        _units = "-k"
+        _multFactor = KiB
+    elif args["-m"]:
+        _units = "-m"
+        _multFactor = MiB
+
     # Input validation:
     try:
-        n_bytes = int(n_bytes)
+        n_bytes = int(args[_units]) * _multFactor
         if n_bytes < 0:
             raise ValueError("Can't be a negative number of bytes!")
     except:
