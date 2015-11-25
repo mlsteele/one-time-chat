@@ -7,12 +7,11 @@ def xor_string(a, b):
 
 def xor(charA, charB):
     return chr(ord(charA) ^ ord(charB))
-def xorOfABinaryTuple((charA,charB)):
-    return xor(charA,charB)
-
-def encrypt(message,pad):
+def xorHelper((charA, charB)):
+    return xor(charA, charB)
+def encrypt(message, pad):
     return map(xorHelper,zip(message,pad))
-def decrypt(cipher,pad):
+def decrypt(cipher, pad):
     return map(xorHelper,zip(cipher,pad))
 
 def prettyPrint(liste):
