@@ -14,6 +14,13 @@ def encrypt(message,pad):
 def decrypt(cipher,pad):
     return map(xorHelper,zip(cipher,pad))
 
+def prettyPrint(liste):
+    string = ''
+    for i in liste:
+        string +=i
+    print string
+    return string
+
 # For now let's just do
 # i || p2 xor ((p1 xor m) || MAC(p1 xor m))
 # j || pj xor (i || pi xor m || MAC(i || pi xor m))
