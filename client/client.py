@@ -27,8 +27,8 @@ class OTC_Client(object):
         assert res.status_code == 200
         return res.json()
 
-    def recieve(self):
-        raise NotImplementedError("TODO: write recieve")
+    def receive(self):
+        raise NotImplementedError("TODO: write receive")
 
     def decrypt(self, message, pad_index):
         # TODO: give ability of default index
