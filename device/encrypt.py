@@ -29,7 +29,3 @@ def MAC(m, key=-1):
     h.update(m)
     return h.digest()
 
-def encrypt(m, i, j, k=0):
-    # use ord
-    msg = str(i) + 
-    
