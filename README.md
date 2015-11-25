@@ -3,7 +3,8 @@ One time pad based communication.
 6.858 Final Project by Jake Barnwell, Andres Perez, Miles Steele
 
 ## Device
-A user has a device which stores their one time pad and allows clients to encrypt and decrypt without giving them the whole pad.
+A user has a device which stores their one time pad and allows
+clients to encrypt and decrypt without giving them the whole pad.
 
 ## Client
 User uses a client running on a computer to communicate with other users.
@@ -14,7 +15,9 @@ Runs on a server and relays messages between clients.
 # Setting up the HRNG (RNG Hardware Device)
 (Adapted from http://ubld.it/products/support/truerng-install-guide)
 First download the rules and unzip them:
+
 wget http://ubld.it/wp-content/uploads/2014/02/TrueRNG-Linux-udev-rules.zip
+
 unzip TrueRNG-Linux-udev-rules.zip -d /etc/udev/rules.d/
 Then plug in the HRNG and check that it's detected:
 ls -l /dev/TrueRNG
