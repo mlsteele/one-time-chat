@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-"""
-"""
 import rpcmethods
 from flask import Flask, request, jsonify
 import os
@@ -29,6 +27,6 @@ def runrpc():
 
 
 if __name__ == "__main__":
-    debug = os.environ["DEBUG"] == "true"
-    print "debug =", debug
+    debug = os.environ.get("DEBUG", False) == "true"
+    print "debug", "on" if debug else "off"
     app.run(host="0.0.0.0", port=9051, debug=debug)
