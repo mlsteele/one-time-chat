@@ -2,3 +2,4 @@
 *.store
 *.*~
 server/database.db
+/tags
