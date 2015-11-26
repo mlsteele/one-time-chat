@@ -8,7 +8,14 @@ clients to encrypt and decrypt without giving them the whole pad.
 
 ## Client
 User uses a client running on a computer to communicate with other users.
+python client.py 'server address' 'user name'
+for example
+python client.py localhost:9050 andres
 
+once the client is running you can send message as follows:
+send 'recipient' 'message'
+
+recieve messages by entering a newline
 ## Server
 Runs on a server and relays messages between clients.
 

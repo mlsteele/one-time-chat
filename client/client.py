@@ -68,9 +68,9 @@ class OTC_Client(object):
     
     def run(self):
         cursor = 0
-        length_of_byte = 8
         print "Welcome to One Time Chat. Type 'help' for help"
         while (True):
+            print cursor
             user_input = raw_input().split()
             if len(user_input) == 0:
                 response = self.get_messages(cursor)
