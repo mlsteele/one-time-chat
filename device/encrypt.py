@@ -14,7 +14,7 @@ def encrypt(message, pad):
 def decrypt(cipher, pad):
     return map(xorHelper,zip(cipher,pad))
 
-def prettyPrint(liste):
+def pretty_print(liste):
     string = ''
     for i in liste:
         string +=i
