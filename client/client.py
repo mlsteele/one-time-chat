@@ -16,7 +16,7 @@ class OTC_Client(object):
         self.friends = {}
 
     #TODO: mapping of username to uid
-    def send(self, message, target):
+    def send(self, target, message):
         payload = {
             "recipient_uid": target,
             "sender_uid": self.user_id,
@@ -65,18 +65,25 @@ class OTC_Client(object):
         # TODO: handle server errors
         assert res.status_code == 200
         return res.json()
-
+    
     def run(self):
         cursor = 0
         length_of_byte = 8
         print "Welcome to One Time Chat. Type 'help' for help"
         while (True):
             user_input = raw_input().split()
+            if len(user_input) == 0:
+                response = self.get_messages(cursor)
+                messages = response[u'messages']
+                for message in messages:
+                    print message[u'sender_uid'] + ":" + message[u'contents']
+                    cursor += 1
+                continue
             command = user_input[0]
             if ( command == "help"):
                 print "to send type send [message] [target]"
             elif (command  == "send"):
-                sent_response = self.send(user_input[1],user_input[2])
+                sent_response = self.send(user_input[1]," ".join(user_input[2:]))
                 if sent_response[u'received']==True:
                     print "Message sent!"
             elif command == "id":
@@ -87,20 +94,14 @@ class OTC_Client(object):
             response = self.get_messages(cursor)
             messages = response[u'messages']
             for message in messages:
-                print message[u'sunder_uid'] + ":" + message[u'contents']
-                cursor+= length_of_byte*message[u'contents']
+                print message[u'sender_uid'] + ":" + message[u'contents']
+                cursor+= 1
 
 if __name__ == "__main__":
-    if (len(sys.argv) < 2):
-        print "ERROR: correct usage is client.py [server_address]"
+    if (len(sys.argv) < 3):
+        print "ERROR: correct usage is client.py [server_address] [user_name]"
         sys.exit(-1)
     server_address = sys.argv[1]
-    alice = OTC_Client(server_address, "alice")
-    bob = OTC_Client(server_address, "bob")
-    print "Sending 'HELLO' to alice"
-    alice.send("HELLO", "bob")
-    alice.send("how are you?", "bob")
-    messages = bob.get_messages(0)[u'messages']
-    for message in messages:
-        print message[u'sender_uid'] + ":" + message[u'contents']
-    assert bob.get_messages(0) == "HELLO"
+    user_name = sys.argv[2]
+    client = OTC_Client(server_address, user_name)
+    client.run()
