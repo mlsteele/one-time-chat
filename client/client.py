@@ -104,12 +104,13 @@ class OTC_Client(object):
             packet_sender = packet[u'sender_uid']
             packet_message = packet[u'contents']
             index = packet_message[:MAX_INDEX_LENGTH]
-            packet_body = packet_message[MAX_INDEX_LENGTH]
+            packet_body = packet_message[MAX_INDEX_LENGTH:]
             
             plain_body = self.rpc_client.decrypt(packet_sender,
                     packet_body,
                     int(index)+len(packet_body)-TAG_LENGTH)
-            
+            ## the starting index of the body pad: index + length of cipher text
+            ## length of cipher text = length of body - length of tag
             tag = plain_body[-64:]
             ciphertext = plain_body[:-64]
             isSafe = self.rpc_client.verfy(packet_sender,index+ciphertext,tag)
