@@ -1,7 +1,6 @@
 import requests
 import sys
-
-
+import rpcclient
 class OTC_Client(object):
     # A client is initialized with the address of the server it intends to
     # connect to.
@@ -14,6 +13,7 @@ class OTC_Client(object):
         self.user_id = user_id
         self.connect()
         self.friends = {}
+        self.rpc_client = rpcclient.RpcClient("http://localhost:9051")
 
     #TODO: mapping of username to uid
     def send(self, target, message):
@@ -26,7 +26,27 @@ class OTC_Client(object):
         # TODO: handle server errors
         assert res.status_code == 200
         return res.json()
+    
+    def secure_send(self,target,message):
+        """ Wrapper around send that encrypts the message before sending 
+         mesage that needs to be sent is along the form :
+            ciphertext = encrypt(message, pad)
+            index_used || encrypt ( ciphertext || MAC (index_used || ciphertext) )
+             """
+        response = self.rpc_client.encrypt(target,message)
+        cipher_text = response["cipher_text"]
+        index_used = response["index_used"]
+        
+        tag = self.rpc_client.sign(index_used+ciphertext)
+        
+        integrity = self.rpc_client.encrypt(target, ciphertext+tag)
 
+        message_body = integrity["cipher_text"]
+        
+        return self.send(target,index_used+message_body)
+    def secure_recieve(self,sender,cipher_text):
+        """ Takes in a cipher text, and returns message"""
+        raise NotImplementedError("TODO: decrypt messages")
     def receive(self):
         raise NotImplementedError("TODO: write receive")
 
@@ -65,7 +85,8 @@ class OTC_Client(object):
         # TODO: handle server errors
         assert res.status_code == 200
         return res.json()
-    
+    def secure_get_messages(self,start_ref):
+        raise NotImplementedError("TODO: Decrypt incomming message")
     def run(self):
         cursor = 0
         print "Welcome to One Time Chat. Type 'help' for help"

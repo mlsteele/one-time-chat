@@ -1,5 +1,4 @@
 import hashlib
-
 def xor_string(a, b):
     if len(a) != len(b):
         raise ValueError("Messages must be the same length!")
@@ -28,4 +27,7 @@ def MAC(m, key=-1):
     h = hashlib.sha256()
     h.update(m)
     return h.digest()
+
+def hash(message):
+    return hashlib.sha512(message).hexdigest()
 

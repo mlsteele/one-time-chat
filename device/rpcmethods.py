@@ -11,7 +11,7 @@ def encrypt(recipient_uid, message):
     """
     ## I imagine the pad to be read_from_device depends on the recipient_uid, the index, and the length of the pad
     return 0
-    (pad,index_used) = read_encryption_pad(recipient_uid,len(message)) 
+    (pad,index_used) = read_encrypt_pad(recipient_uid,len(message)) 
     cipher_list = encrypt.encrypt(message,pad)
     cipher_text = encrypt.pretty_print(cipher_list)
     return {
@@ -19,10 +19,32 @@ def encrypt(recipient_uid, message):
             "cipher_text":cipher_text,
             "index_used":index_used,
     }
+
+def decrypt(sender_uid, cipher_text, index):
+    """ Decrypts a message using a one time pad
+    sender_uid is the id of the user who sent the cipher text.
+    cipher_text is the contents of what they sent to be decrypt
+    returns message decrypted
+    """
+    pad = read_decrypt_pad(sender_uid, index, len(cipher_text))
+    message_list = encrypt.decrypt(message,pad)
+    message = encrypt.pretty_print(message_list)
     return {
-        "status": "failed",
-        "reason": "I don't know how to encrypt",
+            "status":"ok",
+            "message":message,
     }
+def sign(recipient_uid,message):
+    """ takes in a message and returns an authentication tag for that message
+    recipient_uid is the id of the reciever
+    message is the message that needs to be authenticated """
+
+    pad = read_encrypt_pad(recipient_ud, len(message))
+    message_hash = encrypt.hash(message)
+    return message_hash
+def verify(sender_uid,message,tag):
+
+
+    return
 
 def echo(*args, **kwargs):
     """Echo back all arguments (for testing rpc mechanism)."""
