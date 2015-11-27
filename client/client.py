@@ -1,6 +1,9 @@
 import requests
 import sys
 import rpcclient
+
+MAX_INDEX_LENGTH = 32
+TAG_LENGTH=64
 class OTC_Client(object):
     # A client is initialized with the address of the server it intends to
     # connect to.
@@ -44,9 +47,6 @@ class OTC_Client(object):
         message_body = integrity["cipher_text"]
         
         return self.send(target,index_used+message_body)
-    def secure_recieve(self,sender,cipher_text):
-        """ Takes in a cipher text, and returns message"""
-        raise NotImplementedError("TODO: decrypt messages")
     def receive(self):
         raise NotImplementedError("TODO: write receive")
 
@@ -86,7 +86,37 @@ class OTC_Client(object):
         assert res.status_code == 200
         return res.json()
     def secure_get_messages(self,start_ref):
-        raise NotImplementedError("TODO: Decrypt incomming message")
+        """Get all the ciphertext and return a list of messages.
+        packets recieved are in the format 
+        index || encrypt ( ciphertext || SHA ( i || ciphertext ) )
+
+        """
+        payload = {
+                "recipient_uid": self.user_id,
+                "start_ref": start_ref,
+        }
+        res = requests.get(self.server_address + "/getmessages",params=payload)
+        assert res.status_code ==200
+        response_data = res.json()
+        recieved_packets = response_data[u'messages']
+        ### PLEASE REVIEW I PROBABLY !@#$ED UP- anpere ###
+        for packet in recieved_packets:
+            packet_sender = packet[u'sender_uid']
+            packet_message = packet[u'contents']
+            index = packet_message[:MAX_INDEX_LENGTH]
+            packet_body = packet_message[MAX_INDEX_LENGTH]
+            
+            plain_body = self.rpc_client.decrypt(packet_sender,
+                    packet_body,
+                    int(index)+len(packet_body)-TAG_LENGTH)
+            
+            tag = plain_body[-64:]
+            ciphertext = plain_body[:-64]
+            isSafe = self.rpc_client.verfy(packet_sender,index+ciphertext,tag)
+            if isSafe:
+               message = self.rpc_client.encrypt(packet_sender,ciphertext,index)
+
+
     def run(self):
         cursor = 0
         print "Welcome to One Time Chat. Type 'help' for help"

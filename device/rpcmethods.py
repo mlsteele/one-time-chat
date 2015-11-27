@@ -44,7 +44,7 @@ def sign(recipient_uid,message):
 def verify(sender_uid,message,tag):
 
 
-    return
+    return False
 
 def echo(*args, **kwargs):
     """Echo back all arguments (for testing rpc mechanism)."""
