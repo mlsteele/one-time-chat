@@ -36,6 +36,7 @@ class RpcClient(object):
 if __name__ == "__main__":
     """Example usage."""
     rpcclient = RpcClient("http://localhost:9051")
+    # rpcclient = RpcClient("http://10.0.0.2:9051")
 
     print rpcclient.test_prompt()
 
