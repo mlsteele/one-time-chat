@@ -20,6 +20,7 @@ Options:
 -h --help             Show this screen and exit
 """
 
+from utils import *
 from docopt import docopt
 import hashlib
 import os
@@ -100,6 +101,7 @@ def make_random_blob(f0, f1, uid0, uid1, n_bytes, rservice):
 
 def make_metadata(uid0, uid1, n_bytes, rservice):
     def make_data(uid, rid, direction):
+        assert direction in [1,-1]
         data = {}
         data["uid"] = uid
         data["rid"] = rid
@@ -109,6 +111,8 @@ def make_metadata(uid0, uid1, n_bytes, rservice):
         data["rservice"] = rservice
         data["split_index"] = n_bytes / 2
         data["direction"] = direction
+        data["encrypt_index"] = 0 if direction == 1 else n_bytes-1
+        data["decrypt_index"] = n_bytes-1 if direction == 1 else 0
         # These two must always go last, in this order
         data["n_eles"] = len(data.items())+2
         data["checksum"] = hash(frozenset(data.items()))
@@ -159,11 +163,7 @@ def predict_blob_value(index):
     index_hash = hashlib.sha256(str(index)).hexdigest()
     return index_hash[0]
 
-def get_storefile_name(uid):
-    return "{}.random.store".format(uid)
 
-def get_metadatafile_name(uid):
-    return "{}.random.metadata".format(uid)
 
 if __name__ == "__main__":
     args = docopt(__doc__)

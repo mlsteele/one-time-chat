@@ -1,5 +1,8 @@
+from utils import *
 import encrypt
+import os
 import json
+
 """
 All methods that are RPCs should go here.
 """
@@ -49,19 +52,26 @@ def verify(sender_uid,message,tag):
 
     return False
 
-def read_encrypt_pad(recipient_uid, mlen):
-    pass
+def read_encrypt_pad(recipient_uid, mlen):\
+    # Hack way to get the metadata file without the UID
+    files = os.listdir(".")
+    metadataFile = filter(lambda f: f.find(get_metadatafile_name("")) > -1, files)[0]
+    metadata = read_metadata(metadataFile)
 
-def read_metadata(filename="random.store.metadata"):
-    with open(filename, "r") as metadata:
-        data = json.loads(metadata.read())
-        assert len(data.items()) == data["n_eles"]
-        data_check = dict(data)
-        del data_check["checksum"]
-        assert data["checksum"] == hash(frozenset(data_check.items()))
-        assert data["uid"] != data["rid"]
-        assert data["split_index"] >= 0 and data["split_index"] < data["n_bytes"]
-        return data
+    storeFile = metadata["store_filename"]
+    with open(storeFile, "rb") as store:
+        pad = store.read()
+        e = metadata["encrypt_index"]
+        d = metadata["direction"]
+        if d in [1,-1]:
+            with open(metadataFile, "w") as mfile:
+                metadata["encrypt_index"] += mlen*d
+                del metadata["checksum"]
+                metadata["checksum"] = hash(frozenset(metadata.items()))
+                mfile.write(json.dumps(metadata))
+            return pad[e:e + d*mlen:d]
+        else:
+            raise ValueError("Metadata is corrupt; direction should be 1 or -1")
 
 def echo(*args, **kwargs):
     """Echo back all arguments (for testing rpc mechanism)."""
