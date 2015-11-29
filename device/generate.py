@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 """
 Usage:
- storetool.py (-b NBYTES | -k NKBYTES| -m NMBYTES)
-              [-v | --verbose] [-s SVC] [-f FILE]
+ storetool.py UID1 UID2
+              (-b NBYTES | -k NKBYTES| -m NMBYTES)
+              [-v | --verbose] [-s SVC]
  storetool.py (-h | --help)
+
+Arguments:
+ UID1   The User ID of the first person (e.g. alice)
+ UID2   The User ID of the second person (e.g. bob)
 
 Options:
 -b NBYTES             Number of bytes to generate
@@ -11,7 +16,6 @@ Options:
 -m NMBYTES            Number of mebibytes to generate
 -s SVC --service=SVC  RNG service to use; must be either random
                       or urandom. [default: urandom]
--f FILE --file=FILE   Output file [default: random.store]
 -v --verbose          Be verbose
 -h --help             Show this screen and exit
 """
@@ -31,7 +35,7 @@ DEBUG = 2
 # Benchmark: 106 seconds for 1 MiB. That's 
 #  9.66 KiB / sec. With random.
 # urandom is <1 sec per MiB.
-def make_random_blob(f, n_bytes=KiB, rservice="random"):
+def make_random_blob(f0, f1, uid0, uid1, n_bytes, rservice):
     """Make a random store blob. Uses hardware-RNG
        along with /dev/random so that there is high
        entropy. Unless the user specifies urandom in
@@ -53,7 +57,7 @@ def make_random_blob(f, n_bytes=KiB, rservice="random"):
     log()
     log("Generating {} random bytes".format(n_bytes) +
         " with OS service '{}'".format(rservice), 0)
-    log("Target file: {}".format(f.name))
+    log("Target files: {} and {}".format(f0.name, f1.name))
     log()
 
     # Will store # of bytes generated
@@ -68,7 +72,8 @@ def make_random_blob(f, n_bytes=KiB, rservice="random"):
             #  to work the best.
             nbytes2write = KiB if n_bytes - n >= KiB else n_bytes - n
             randobytes = rand.read(nbytes2write)
-            f.write(randobytes)
+            f0.write(randobytes)
+            f1.write(randobytes)
             n += nbytes2write
             log("Wrote kilobyte chunk {}/{}"
                 .format(n/KiB,(n_bytes+KiB-1)/KiB), 2, n%KiB==0)
@@ -88,29 +93,37 @@ def make_random_blob(f, n_bytes=KiB, rservice="random"):
     log(" - time elapsed: {} seconds".format(t2 - t1))
     log(" - throughput: {} KiB/s".format((1.0*n_bytes/KiB) / (t2 - t1)))
     log()
-    log("{} random bytes have been written to {}".format(n_bytes, f.name))
+    log("{} random bytes have been written to {} and {}"
+        .format(n_bytes, f0.name, f1.name))
 
-    make_metadata(f, n_bytes, rservice)
+    make_metadata(uid0, uid1, n_bytes, rservice)
 
-def make_metadata(f, n_bytes, rservice):
-    filename = f.name + ".metadata"
-    data = {}
-    data["store_filename"] = f.name
-    data["metadata_filename"] = filename
-    data["n_bytes"] = n_bytes
-    data["rservice"] = rservice
-    data["split_index"] = n_bytes / 2 # Warning: if n_bytes is odd...
-    data["uid"] = 0
-    data["rid"] = 1
+def make_metadata(uid0, uid1, n_bytes, rservice):
+    def make_data(uid, rid, direction):
+        data = {}
+        data["uid"] = uid
+        data["rid"] = rid
+        data["store_filename"] = get_storefile_name(uid)
+        data["metadata_filename"] = get_metadatafile_name(uid)
+        data["n_bytes"] = n_bytes
+        data["rservice"] = rservice
+        data["split_index"] = n_bytes / 2
+        data["direction"] = direction
+        # These two must always go last, in this order
+        data["n_eles"] = len(data.items())+2
+        data["checksum"] = hash(frozenset(data.items()))
+        return data
 
-    # These two must always go last, in this order
-    data["n_eles"] = len(data.items())+2
-    data["checksum"] = hash(frozenset(data.items()))
+    data = [make_data(uid0, uid1, 1), make_data(uid1, uid0, -1)]
 
-    with open(filename, "w") as metadata:
-        metadata.write(json.dumps(data))
-    log("metadata for {} has been written to {}"
-        .format(f.name, filename))
+    mfile = [data[0]["metadata_filename"], data[1]["metadata_filename"]]
+    sfile = [data[0]["store_filename"], data[1]["store_filename"]]
+
+    with open(mfile[0], "w") as metadata0, open(mfile[1], "w") as metadata1:
+        metadata0.write(json.dumps(data[0]))
+        metadata1.write(json.dumps(data[1]))
+    log("metadata for {} and {} have been written to {} and {}, respectively"
+        .format(sfile[0], sfile[1], mfile[0], mfile[1]))
 
 # d: 0 = production, 1 = status messages, 2 = full debug
 def log(msg=-1, d=0, condition=True):
@@ -146,10 +159,17 @@ def predict_blob_value(index):
     index_hash = hashlib.sha256(str(index)).hexdigest()
     return index_hash[0]
 
+def get_storefile_name(uid):
+    return "{}.random.store".format(uid)
+
+def get_metadatafile_name(uid):
+    return "{}.random.metadata".format(uid)
+
 if __name__ == "__main__":
     args = docopt(__doc__)
     
-    filepath = args["--file"]
+    uid0 = args["UID1"]
+    uid1 = args["UID2"]
     rservice = args["--service"]
     verbose = args["--verbose"]
     
@@ -174,7 +194,8 @@ if __name__ == "__main__":
     if rservice not in ["random","urandom"]:
         exit("'{}' is not a valid service. ".format(rservice) +
              "Service must be one of {random,urandom}")
-
+    filepath1 = get_storefile_name(uid0)
+    filepath2 = get_storefile_name(uid1)
     DEBUG = 2 if verbose else 0
-    with open(filepath, "wb") as f:
-        make_random_blob(f, n_bytes=n_bytes, rservice=rservice)
+    with open(filepath1, "wb") as f1, open(filepath2, 'wb') as f2:
+        make_random_blob(f1, f2, uid0, uid1, n_bytes, rservice)
