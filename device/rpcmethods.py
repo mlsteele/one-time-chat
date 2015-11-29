@@ -7,6 +7,9 @@ import json
 All methods that are RPCs should go here.
 """
 
+# Confirm controller handle.
+csc = None
+
 def encrypt(recipient_uid, message):
     """ Encrypts a message using a one time pad  
     recipient_uid is the id of the recipient. This impacts what pad will be used to encrypt
@@ -87,3 +90,7 @@ def alwaysfail(*args, **kwargs):
 def add(a, b):
     """Add two numbers (for testing rpc mechanism)."""
     return a + b
+
+def test_prompt():
+    print "test prompt requested", csc
+    return csc.yn_prompt("[Fake] Release 2000\nbits of pad?")

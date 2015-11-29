@@ -36,14 +36,18 @@ class RpcClient(object):
 if __name__ == "__main__":
     """Example usage."""
     rpcclient = RpcClient("http://localhost:9051")
-    print rpcclient.echo("ABC", "DEF", x=1, y=2)
-    print rpcclient.add(3, 5)
-    try:
-        print rpcclient.add()
-    except RpcException as ex:
-        print "EXCEPTION", ex
-    try:
-        print rpcclient.alwaysfail()
-    except RpcException as ex:
-        print "EXCEPTION", ex
-    print rpcclient.encrypt(3, 5)
+
+    print rpcclient.test_prompt()
+
+    if False:
+        print rpcclient.echo("ABC", "DEF", x=1, y=2)
+        print rpcclient.add(3, 5)
+        try:
+            print rpcclient.add()
+        except RpcException as ex:
+            print "EXCEPTION", ex
+        try:
+            print rpcclient.alwaysfail()
+        except RpcException as ex:
+            print "EXCEPTION", ex
+        print rpcclient.encrypt(3, 5)

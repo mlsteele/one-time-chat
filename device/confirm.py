@@ -15,6 +15,13 @@ from evdev import InputDevice, list_devices
 
 
 class ConfirmScreenController(object):
+    """
+    Handle for the confirmation screen.
+
+    Methods can be called on this class from the main thread.
+    
+    Unrecognized methods will be safely proxied to the graphics thread.
+    """
     def __init__(self, fullscreen=False):
         self.started = False
         self.comm = None
@@ -30,13 +37,23 @@ class ConfirmScreenController(object):
         self.csp = ConfirmScreenProcess(comm2, fullscreen=self.fullscreen)
         self.csp.start()
 
-    def set_prompt(self, text):
-        pass
+    def yn_prompt(self, text):
+        """Present a yes no prompt and get the result.
+        Blocks until a response is clicked.
+
+        Args:
+            text: Prompt to use.
+        Returns:
+            Boolean of the user's response.
+        """
+        self.set_prompt(text)
+        return self.comm.recv()
 
     def __getattr__(self, key):
         """
         Forward calls to the screen proces.
         Return values are lost.
+        This was a bad idea. Very confusing.
         """
         # Make sure it's a declared method on the process
         try:
@@ -69,6 +86,18 @@ class ConfirmScreenProcess(multiprocessing.Process):
         self.running = False
         self.comm = comm
 
+        self.p_prompt_on = False
+        self.p_prompt_text = "no prompt text"
+
+    def set_prompt(self, text):
+        self.p_prompt_on = True
+        self.p_prompt_text = text
+
+    def prompt_response(self, whether):
+        self.p_prompt_on = False
+        self.p_prompt_text = "no prompt text"
+        self.comm.send(whether)
+
     def shutdown(self):
         self.running = False
 
@@ -99,7 +128,7 @@ class ConfirmScreenProcess(multiprocessing.Process):
         flags = 0
         if self.fullscreen:
             flags |= pygame.FULLSCREEN
-        screen = pygame.display.set_mode((320, 240), flags, 32)
+        self.screen = pygame.display.set_mode((320, 240), flags, 32)
         pygame.display.set_caption('Drawing')
 
         # set up the colors
@@ -113,23 +142,45 @@ class ConfirmScreenProcess(multiprocessing.Process):
         YELLOW =(255, 255,   0)
         SOOTHBLUE = (0, 56, 87)
 
-        # Fill background
-        background = pygame.Surface(screen.get_size())
-        background = background.convert()
-        background.fill(SOOTHBLUE)
-
-        # Display some text
-        font = pygame.font.Font(None, 36)
-        text = font.render("Locked", 1, WHITE)
-        textpos = text.get_rect(centerx=background.get_width()/2, centery=background.get_height()/2)
-        background.blit(text, textpos)
-
-        screen.blit(background, (0, 0))
-        pygame.display.flip()
-
-        running = True
         # run the game loop
-        while running:
+        while self.running:
+
+            ###### frame draw
+            # Fill background
+            background = pygame.Surface(self.screen.get_size())
+            background = background.convert()
+            background.fill(SOOTHBLUE)
+
+            font = pygame.font.Font(None, 30)
+
+            if self.p_prompt_on:
+                # for index, line in enumerate(split_every(self.p_prompt_text, 30)):
+                for index, line in enumerate(self.p_prompt_text.split("\n")):
+                    prompttext = font.render(line, 1, WHITE)
+                    prompttextpos = prompttext.get_rect(centerx=background.get_width()/2,
+                                                        centery=background.get_height()/2 - 80 + 20*index)
+                    background.blit(prompttext, prompttextpos)
+
+                yestext = font.render("Allow", 1, WHITE)
+                yestextpos = yestext.get_rect(centerx=background.get_width()/2 - 60,
+                                              centery=background.get_height()/2 + 80)
+                background.blit(yestext, yestextpos)
+
+                notext = font.render("Deny", 1, WHITE)
+                notextpos = notext.get_rect(centerx=background.get_width()/2 + 60,
+                                            centery=background.get_height()/2 + 80)
+                background.blit(notext, notextpos)
+            else:
+                # Display some text
+                text = font.render("Locked", 1, WHITE)
+                textpos = text.get_rect(centerx=background.get_width()/2,
+                                        centery=background.get_height()/2)
+                background.blit(text, textpos)
+
+            self.screen.blit(background, (0, 0))
+            pygame.display.flip()
+            ###### end frame draw
+
             self._check_message()
             if not self.running:
                 return
@@ -137,17 +188,17 @@ class ConfirmScreenProcess(multiprocessing.Process):
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
-                    running = False  
+                    self.running = False  
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    print("Pos: %sx%s\n" % pygame.mouse.get_pos())
-                    if textpos.collidepoint(pygame.mouse.get_pos()):
-                        pygame.quit()
-                        sys.exit()
-                        running = False
+                    print("touch pos: %sx%s\n" % pygame.mouse.get_pos())
+                    if self.p_prompt_on:
+                        if notextpos.collidepoint(pygame.mouse.get_pos()):
+                            self.prompt_response(False)
+                        elif yestextpos.collidepoint(pygame.mouse.get_pos()):
+                            self.prompt_response(True)
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                    running = False
+                    self.running = False
             pygame.display.update()
-
 
 def is_rpi():
     """Test if this code is running on a raspberry pi."""
@@ -156,6 +207,9 @@ def is_rpi():
         return True
     except ImportError:
         return False
+
+def split_every(text, n):
+    return [text[i:i+n] for i in range(0, len(text), n)]
 
 if __name__ == "__main__":
     fullscreen = is_rpi()
