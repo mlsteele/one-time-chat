@@ -20,6 +20,7 @@ from docopt import docopt
 import hashlib
 import os
 import time
+import json
 
 KiB = 1024;
 MiB = 1024 * KiB;
@@ -88,6 +89,28 @@ def make_random_blob(f, n_bytes=KiB, rservice="random"):
     log(" - throughput: {} KiB/s".format((1.0*n_bytes/KiB) / (t2 - t1)))
     log()
     log("{} random bytes have been written to {}".format(n_bytes, f.name))
+
+    make_metadata(f, n_bytes, rservice)
+
+def make_metadata(f, n_bytes, rservice):
+    filename = f.name + ".metadata"
+    data = {}
+    data["store_filename"] = f.name
+    data["metadata_filename"] = filename
+    data["n_bytes"] = n_bytes
+    data["rservice"] = rservice
+    data["split_index"] = n_bytes / 2 # Warning: if n_bytes is odd...
+    data["uid"] = 0
+    data["rid"] = 1
+
+    # These two must always go last, in this order
+    data["n_eles"] = len(data.items())+2
+    data["checksum"] = hash(frozenset(data.items()))
+
+    with open(filename, "w") as metadata:
+        metadata.write(json.dumps(data))
+    log("metadata for {} has been written to {}"
+        .format(f.name, filename))
 
 # d: 0 = production, 1 = status messages, 2 = full debug
 def log(msg=-1, d=0, condition=True):

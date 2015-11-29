@@ -1,5 +1,6 @@
 *.pyc
 *.store
+*.metadata
 *.*~
 server/database.db
 /tags
