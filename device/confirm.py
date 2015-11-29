@@ -8,6 +8,7 @@ import sys
 import os
 import time
 import inspect
+import colorsys
 
 import pygame
 from pygame.locals import *
@@ -25,7 +26,8 @@ class ConfirmScreenController(object):
     def __init__(self, fullscreen=False):
         self.started = False
         self.comm = None
-        self.fullscreen = fullscreen
+        # Only fullscreen if running on a pi.
+        self.fullscreen = is_rpi()
 
     def start(self):
         """Launch the confirm screen."""
@@ -128,19 +130,19 @@ class ConfirmScreenProcess(multiprocessing.Process):
         flags = 0
         if self.fullscreen:
             flags |= pygame.FULLSCREEN
-        self.screen = pygame.display.set_mode((320, 240), flags, 32)
+        self.screen = pygame.display.set_mode((480, 320), flags, 32)
         pygame.display.set_caption('Drawing')
 
         # set up the colors
-        BLACK = (  0,   0,   0)
-        WHITE = (255, 255, 255)
-        RED   = (255,   0,   0)
-        GREEN = (  0, 255,   0)
-        BLUE  = (  0,   0, 255)
-        CYAN  = (  0, 255, 255)
-        MAGENTA=(255,   0, 255)
-        YELLOW =(255, 255,   0)
-        SOOTHBLUE = (0, 56, 87)
+        BLACK = self.map_color( (  0,   0,   0) )
+        WHITE = self.map_color( (255, 255, 255) )
+        RED   = self.map_color( (255,   0,   0) )
+        GREEN = self.map_color( (  0, 255,   0) )
+        BLUE  = self.map_color( (  0,   0, 255) )
+        CYAN  = self.map_color( (  0, 255, 255) )
+        MAGENTA = self.map_color( (255,   0, 255) )
+        YELLOW = self.map_color( (255, 255,   0) )
+        SOOTHBLUE = self.map_color( (0, 56, 87) )
 
         # run the game loop
         while self.running:
@@ -151,14 +153,15 @@ class ConfirmScreenProcess(multiprocessing.Process):
             background = background.convert()
             background.fill(SOOTHBLUE)
 
-            font = pygame.font.Font(None, 30)
+            font = pygame.font.Font(None, 48)
 
             if self.p_prompt_on:
                 # for index, line in enumerate(split_every(self.p_prompt_text, 30)):
+                VERT_SPACE = 40
                 for index, line in enumerate(self.p_prompt_text.split("\n")):
                     prompttext = font.render(line, 1, WHITE)
                     prompttextpos = prompttext.get_rect(centerx=background.get_width()/2,
-                                                        centery=background.get_height()/2 - 80 + 20*index)
+                                                        centery=background.get_height()/2 - 80 + VERT_SPACE*index)
                     background.blit(prompttext, prompttextpos)
 
                 yestext = font.render("Allow", 1, WHITE)
@@ -200,6 +203,14 @@ class ConfirmScreenProcess(multiprocessing.Process):
                     self.running = False
             pygame.display.update()
 
+    def map_color(self, color):
+        """Map a color. Our raspberry pi display shows negative."""
+        if not is_rpi():
+            return color
+        else:
+            (r,g,b) = color
+            return (255 - r, 255 - g, 255 - b)
+
 def is_rpi():
     """Test if this code is running on a raspberry pi."""
     try:
@@ -213,7 +224,7 @@ def split_every(text, n):
 
 if __name__ == "__main__":
     fullscreen = is_rpi()
-    csc = ConfirmScreenController(fullscreen=True)
+    csc = ConfirmScreenController()
     csc.start()
     time.sleep(3)
     csc.shutdown()
