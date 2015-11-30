@@ -38,19 +38,20 @@ class OTC_Client(object):
 
         self.connect()
         self.friends = {}
-        self.rpc_client = rpcclient.RpcClient("http://localhost:9051")
+        self.rpc_client = rpcclient.RpcClient(self.device_address)
 
     #TODO: mapping of username to uid
-    def send(self, target, message):
+    def send_plaintext(self, target, message):
         payload = {
             "recipient_uid": target,
             "sender_uid": self.user_id,
             "contents": message,
         }
-        res = requests.post(self.server_address + "/send", data=payload)
-        # TODO: handle server errors
-        assert res.status_code == 200
-        return res.json()
+        try:
+            res = requests.post(self.server_address + "/send", data=payload)
+            res.raise_for_status()
+        except RequestException as ex:
+            raise ClientException("Could not connect to server.", ex)
 
     # TODO  FIX -- put all of this on device, cal it packet/package or something
     #  because it just makes more sense to do this all on device instead of
@@ -103,6 +104,7 @@ class OTC_Client(object):
         return raw_input("enter a fake user id: ")
     def get_username_id(self,username):
         return self.friends[username]
+
     def get_messages(self, start_ref):
         """Get all messages starting at start_ref."""
         payload = {
@@ -110,10 +112,13 @@ class OTC_Client(object):
             "start_ref": start_ref,
             # maxcount optional
         }
-        res = requests.get(self.server_address + "/getmessages", params=payload)
-        # TODO: handle server errors
-        assert res.status_code == 200
+        try:
+            res = requests.get(self.server_address + "/getmessages", params=payload)
+            res.raise_for_status()
+        except RequestException as ex:
+            raise ClientException("Could not get messages from server.", ex)
         return res.json()
+
     def secure_get_messages(self,start_ref):
         """Get all the ciphertext and return a list of messages.
         packets recieved are in the format 
@@ -172,9 +177,10 @@ class OTC_Client(object):
                 print "to quit type quit or q or exit."
                 print "============"
             elif (command  == "send"):
-                sent_response = self.send(user_input[1]," ".join(user_input[2:]))
-                if sent_response[u'received']==True:
-                    print "Message sent!"
+                recipient = user_input[1]
+                message = " ".join(user_input[2:])
+                self.send_plaintext(recipient, message)
+                print "Message sent!"
             elif command == "id":
                 print "User ID:", self.user_id
             elif command == "lookup":
