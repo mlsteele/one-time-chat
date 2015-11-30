@@ -123,18 +123,22 @@ class OTC_Client(object):
         cursor = 0
         print "Welcome to One Time Chat. Type 'help' for help"
         while (True):
-            print cursor
+            print ""
+            print "Cursor:", cursor
             user_input = raw_input().split()
             if len(user_input) == 0:
                 response = self.get_messages(cursor)
                 messages = response[u'messages']
                 for message in messages:
-                    print message[u'sender_uid'] + ":" + message[u'contents']
+                    print message[u'sender_uid'] + ": " + message[u'contents']
                     cursor = message['ref'] + 1
                 continue
             command = user_input[0]
             if ( command == "help"):
+                print "=== help ==="
                 print "to send type send [target] [message]"
+                print "to recieve messages press enter."
+                print "============"
             elif (command  == "send"):
                 sent_response = self.send(user_input[1]," ".join(user_input[2:]))
                 if sent_response[u'received']==True:
@@ -152,4 +156,8 @@ if __name__ == "__main__":
     server_address = sys.argv[1]
     user_name = sys.argv[2]
     client = OTC_Client(server_address, user_name)
-    client.run()
+    try:
+        client.run()
+    except KeyboardInterrupt:
+        print "\nBye."
+        sys.exit(0)
