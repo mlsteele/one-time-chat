@@ -125,7 +125,8 @@ class ConfirmScreenProcess(multiprocessing.Process):
         os.environ["SDL_MOUSEDEV"] = eventX
 
         pygame.init()
-        pygame.mouse.set_visible(False)
+        if is_rpi():
+            pygame.mouse.set_visible(False)
 
         # set up the window
         flags = 0
