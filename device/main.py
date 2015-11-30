@@ -31,7 +31,7 @@ if __name__ == "__main__":
         rpcmethods.csc = csc
 
     print "Starting rpc server."
-    rpcserver.app.run(host="0.0.0.0", port=9051, debug=False)
+    rpcserver.app.run(host="0.0.0.0", port=port, debug=False)
 
     print "Shutting down."
     if csc:
