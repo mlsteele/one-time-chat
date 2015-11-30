@@ -194,6 +194,39 @@ def getmessages():
     }
     return jsonify(resdict)
 
+@app.route("/getnextref", methods=["GET"])
+@auto.doc()
+def getnextref():
+    """
+    Get the next ref for a recipient.
+    This is the smallest ref number which has not yet been seen by the server.
+
+    Takes GET query parameters:
+    - recipient_uid: Who to query for.
+
+    Returns json with keys:
+    - nextref: smallest ref number which has not yet been seen by the server.
+    """
+    # ID of the user receiving the message.
+    recipient_uid = request.args.get("recipient_uid")
+
+    if not recipient_uid:
+        raise APIException(400, "getmessages missing required field: recipient_uid")
+
+    messages = (db.session.query(Message)
+                .filter(Message.recipient_uid == recipient_uid)
+                .order_by(Message.ref.desc())
+                .limit(1).all())
+
+    nextref = 0
+    if len(messages) > 0:
+        nextref = messages[0].ref + 1
+
+    resdict = {
+        "nextref": nextref,
+    }
+    return jsonify(resdict)
+
 if __name__ == "__main__":
     arguments = docopt(__doc__)
     port = arguments["<port>"]

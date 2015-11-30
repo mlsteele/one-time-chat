@@ -37,6 +37,7 @@ class OTC_Client(object):
         print "User ID:", self.user_id
 
         self.connect()
+        self.nextref = self.get_next_ref()  # first unread ref
         self.friends = {}
         self.rpc_client = rpcclient.RpcClient(self.device_address)
 
@@ -107,13 +108,27 @@ class OTC_Client(object):
             "TODO: clients need to be able to read from their device")
             # TODO: http form maybe
 
-    def getCurrentCursor(self):
-        raise NotImplemetnedError("TODO: cursor must be read from device")
     def get_user_id(self):
         print "TODO: clients need to be able to fetch user id from their device"
         return raw_input("enter a fake user id: ")
+
     def get_username_id(self,username):
         return self.friends[username]
+
+    def get_next_ref(self):
+        """Get the next ref for a recipient.
+        This is the smallest ref number which has not yet been seen by the server.
+        """
+        # TODO it might better if this came from the device instead.
+        payload = {
+            "recipient_uid": self.user_id,
+        }
+        try:
+            res = requests.get(self.server_address + "/getnextref", params=payload)
+            res.raise_for_status()
+        except RequestException as ex:
+            raise ClientException("Could not get next ref from server.", ex)
+        return res.json()["nextref"]
 
     def get_messages(self, start_ref):
         """Get all messages starting at start_ref."""
@@ -163,19 +178,18 @@ class OTC_Client(object):
 
 
     def run(self):
-        cursor = 0 # First unread ref.
         print "Welcome to One Time Chat. Type 'help' for help."
 
         while (True):
             print ""
-            print "Cursor:", cursor
+            print "Cursor:", self.nextref
             user_input = raw_input().split()
             if len(user_input) == 0:
-                response = self.get_messages(cursor)
+                response = self.get_messages(self.nextref)
                 messages = response[u'messages']
                 for message in messages:
                     print message[u'sender_uid'] + ": " + message[u'contents']
-                    cursor = message['ref'] + 1
+                    self.nextref = message['ref'] + 1
                 continue
             command = user_input[0]
             if ( command == "help"):
@@ -226,6 +240,6 @@ if __name__ == "__main__":
 
     try:
         client.run()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         print "\nBye."
         sys.exit(0)
