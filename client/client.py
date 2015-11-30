@@ -26,14 +26,14 @@ class OTC_Client(object):
     # A client is initialized with the address of the server it intends to
     # connect to.
 
-    def __init__(self, server_address, user_id, device_address=0):
-        if not server_address.startswith("http://"):
-            server_address = "http://" + server_address
-        self.server_address = server_address
+    def __init__(self, server_address, device_address, user_id):
+        self.server_address = normalize_address(server_address)
+        self.device_address = normalize_address(device_address)
         # TODO: remove for testing self.user_id = self.get_user_id()
         self.user_id = user_id
 
-        print "Server address:", self.server_address
+        print "Relay server address:", self.server_address
+        print "Pad   device address:", self.device_address
         print "User ID:", self.user_id
 
         self.connect()
@@ -188,13 +188,25 @@ class OTC_Client(object):
                 print "Unrecognized command '{}'. Type 'help' for help.".format(command)
 
 
+def normalize_address(address):
+    # Assume that a number is a port on localhost.
+    try:
+        int(address)
+        return "http://localhost:{}".format(address)
+    except ValueError:
+        pass
+    # Add http protocol.
+    if not address.startswith("http://"):
+        return "http://{}".format(server_address)
+
+
 if __name__ == "__main__":
     arguments = docopt(__doc__)
 
     server_address = arguments["<server_address>"]
     device_address = arguments["<device_address>"]
     user_name = arguments["<user_name>"]
-    client = OTC_Client(server_address, user_name)
+    client = OTC_Client(server_address, device_address, user_name)
 
     try:
         client.run()
