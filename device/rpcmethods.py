@@ -51,8 +51,6 @@ def sign(recipient_uid,message):
     return message_hash
 
 def verify(sender_uid,message,tag):
-
-
     return False
 
 # Returns UID of this device
@@ -67,17 +65,18 @@ def read_decrypt_pad(sender_uid, decrypt_index, clen):
     uid = me()
     metadataFile = get_metadatafile_name(uid, sender_uid)
     metadata = read_metadata(metadataFile)
+    assert decrypt_index >= 0 and decrypt_index < metadata["n_bytes"]
 
     storeFile = metadata["store_filename"]
     with open(storeFile, "rb") as store:
         pad = store.read()
         d = metadata["direction"]
-
-        return pad[decrypt_index:decrypt_index+d*clen:d]
+        endIndex = decrypt_index + d * clen
+        assert endIndex >= 0 and endIndex < metadata["n_bytes"]
+        return pad[decrypt_index:endIndex:d]
 
 # Returns (pad, index) 
 def read_encrypt_pad(recipient_uid, mlen):
-    # Hack way to get the metadata file without the UID
     uid = me()
     metadataFile = get_metadatafile_name(uid, recipient_uid)
     metadata = read_metadata(metadataFile)
