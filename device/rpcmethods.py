@@ -55,11 +55,13 @@ def verify(sender_uid,message,tag):
     return encrypt.hash(message)==tag
 
 # Returns UID of this device
-def me():
+def me(true_id=None):
+    if true_id: # Override for when multiple clients on one computer
+        return true_id
     files = os.listdir(".")
     metadata_file = filter(lambda f: f.find(METADATA_STEM) > -1, files)[0]
     uid = metadata_file[:metadata_file.index(".")]
-    return uid    
+    return uid
 
 # Returns the relevant portion of the pad
 def read_decrypt_pad(sender_uid, decrypt_index, clen):
@@ -93,15 +95,6 @@ def read_encrypt_pad(recipient_uid, mlen):
             metadata = update_metadata(metadata, updates)
             mfile.write(json.dumps(metadata))
         return (pad[e:e + d*mlen:d], e)
-
-def update_metadata(metadata, updates):
-    del metadata["checksum"]
-    for key in updates:
-        if key == "n_eles":
-            raise ValueError("Cannot change n_eles, wtf are you doing")
-        metadata[key] = updates[key]
-    metadata["checksum"] = hash(frozenset(metadata.items()))
-    return metadata
 
 def echo(*args, **kwargs):
     """Echo back all arguments (for testing rpc mechanism)."""

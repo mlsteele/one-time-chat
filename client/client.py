@@ -29,7 +29,11 @@ class OTC_Client(object):
         # TODO: handle server errors
         assert res.status_code == 200
         return res.json()
-    
+
+    # TODO  FIX -- put all of this on device, cal it packet/package or something
+    #  because it just makes more sense to do this all on device instead of
+    #  sending shit back and forth 38 times. Also asking the person multiple
+    #  times for confirmation is annoying
     def secure_send(self,target,message):
         """ Wrapper around send that encrypts the message before sending 
          mesage that needs to be sent is along the form :

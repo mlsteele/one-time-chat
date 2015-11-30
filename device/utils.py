@@ -23,3 +23,12 @@ def read_metadata(filename):
         assert data["encrypt_index"] >= 0 and data["encrypt_index"] < data["n_bytes"]
         assert data["decrypt_index"] >= 0 and data["decrypt_index"] < data["n_bytes"]
         return data
+
+def update_metadata(metadata, updates):
+    del metadata["checksum"]
+    for key in updates:
+        if key == "n_eles":
+            raise ValueError("Cannot change n_eles, wtf are you doing")
+        metadata[key] = updates[key]
+    metadata["checksum"] = hash(frozenset(metadata.items()))
+    return metadata
