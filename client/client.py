@@ -47,6 +47,7 @@ class OTC_Client(object):
         message_body = integrity["cipher_text"]
         
         return self.send(target,index_used+message_body)
+
     def receive(self):
         raise NotImplementedError("TODO: write receive")
 
@@ -129,11 +130,11 @@ class OTC_Client(object):
                 messages = response[u'messages']
                 for message in messages:
                     print message[u'sender_uid'] + ":" + message[u'contents']
-                    cursor += 1
+                    cursor = message['ref'] + 1
                 continue
             command = user_input[0]
             if ( command == "help"):
-                print "to send type send [message] [target]"
+                print "to send type send [target] [message]"
             elif (command  == "send"):
                 sent_response = self.send(user_input[1]," ".join(user_input[2:]))
                 if sent_response[u'received']==True:
@@ -142,12 +143,7 @@ class OTC_Client(object):
                 print self.user_id
             elif command == "lookup":
                 raise NotImplementedError("need to implement username to uid lookup")
-            # GET messages
-            response = self.get_messages(cursor)
-            messages = response[u'messages']
-            for message in messages:
-                print message[u'sender_uid'] + ":" + message[u'contents']
-                cursor+= 1
+
 
 if __name__ == "__main__":
     if (len(sys.argv) < 3):
