@@ -51,9 +51,9 @@ def sign(recipient_uid,message):
     return message_hash
 
 def verify(sender_uid,message,tag):
+    """ verifies that the message hashes to the tag value """
 
-
-    return False
+    return encrypt.hash(message)==tag
 
 # Returns UID of this device
 def me():
