@@ -105,8 +105,8 @@ def make_metadata(uid0, uid1, n_bytes, rservice):
         data = {}
         data["uid"] = uid
         data["rid"] = rid
-        data["store_filename"] = get_storefile_name(uid)
-        data["metadata_filename"] = get_metadatafile_name(uid)
+        data["store_filename"] = get_storefile_name(uid, rid)
+        data["metadata_filename"] = get_metadatafile_name(uid, rid)
         data["n_bytes"] = n_bytes
         data["rservice"] = rservice
         data["split_index"] = n_bytes / 2
@@ -194,8 +194,8 @@ if __name__ == "__main__":
     if rservice not in ["random","urandom"]:
         exit("'{}' is not a valid service. ".format(rservice) +
              "Service must be one of {random,urandom}")
-    filepath1 = get_storefile_name(uid0)
-    filepath2 = get_storefile_name(uid1)
+    filepath1 = get_storefile_name(uid0, uid1)
+    filepath2 = get_storefile_name(uid1, uid0)
     DEBUG = 2 if verbose else 0
     with open(filepath1, "wb") as f1, open(filepath2, 'wb') as f2:
         make_random_blob(f1, f2, uid0, uid1, n_bytes, rservice)

@@ -55,10 +55,18 @@ def verify(sender_uid,message,tag):
 
     return False
 
-def read_encrypt_pad(recipient_uid, mlen):\
-    # Hack way to get the metadata file without the UID
+# Returns UID of this device
+def me():
     files = os.listdir(".")
-    metadataFile = filter(lambda f: f.find(get_metadatafile_name("")) > -1, files)[0]
+    metadata_file = filter(lambda f: f.find(METADATA_STEM) > -1, files)[0]
+    uid = metadata_file[:metadata_file.index(".")]
+    return uid    
+
+# Returns (pad, index) 
+def read_encrypt_pad(recipient_uid, mlen):
+    # Hack way to get the metadata file without the UID
+    uid = me()
+    metadataFile = get_metadatafile_name(uid, recipient_uid)
     metadata = read_metadata(metadataFile)
 
     storeFile = metadata["store_filename"]
@@ -68,13 +76,20 @@ def read_encrypt_pad(recipient_uid, mlen):\
         d = metadata["direction"]
         if d in [1,-1]:
             with open(metadataFile, "w") as mfile:
-                metadata["encrypt_index"] += mlen*d
-                del metadata["checksum"]
-                metadata["checksum"] = hash(frozenset(metadata.items()))
-                mfile.write(json.dumps(metadata))
-            return pad[e:e + d*mlen:d]
+                updates = {"encrypt_index": e+d*mlen}
+                mfile.write(json.dumps(update_metadata(metadata, updates)))
+            return (pad[e:e + d*mlen:d], e)
         else:
             raise ValueError("Metadata is corrupt; direction should be 1 or -1")
+
+def update_metadata(metadata, updates):
+    del metadata["checksum"]
+    for key in updates:
+        if key == "n_eles":
+            raise ValueError("Cannot change n_eles, wtf are you doing")
+        metadata[key] = updates[key]
+    metadata["checksum"] = hash(frozenset(metadata.items()))
+    return metadata
 
 def echo(*args, **kwargs):
     """Echo back all arguments (for testing rpc mechanism)."""

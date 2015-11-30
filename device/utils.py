@@ -1,10 +1,13 @@
 import json
 
-def get_storefile_name(uid):
-    return "{}.random.store".format(uid)
+METADATA_STEM = ".random.metadata"
+STOREFILE_STEM = ".random.store"
 
-def get_metadatafile_name(uid):
-    return "{}.random.metadata".format(uid)
+def get_storefile_name(uid, rid):
+    return "{}.{}{}".format(uid, rid, STOREFILE_STEM)
+
+def get_metadatafile_name(uid, rid):
+    return "{}.{}{}".format(uid, rid, METADATA_STEM)
 
 def read_metadata(filename):
     with open(filename, "r") as metadata:
