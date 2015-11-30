@@ -213,6 +213,12 @@ class ConfirmScreenProcess(multiprocessing.Process):
             (r,g,b) = color
             return (255 - r, 255 - g, 255 - b)
 
+
+class DummyConfirmScreenController(object):
+    def yn_prompt(self, text):
+        return True
+
+
 def is_rpi():
     """Test if this code is running on a raspberry pi."""
     try:

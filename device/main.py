@@ -1,19 +1,38 @@
 """
-Entry point for device.
+OTC Pad Device.
+Entry point for device code.
+
+Usage:
+  main.py [<port>] [--no-display]
+
+Options:
+  --no-display    Don't initialize the display.
 """
+from docopt import docopt
 
 import rpcserver
 import rpcmethods
 import confirm
 
 if __name__ == "__main__":
-    print "Starting confirmation display process."
-    csc = confirm.ConfirmScreenController(fullscreen=False)
-    rpcmethods.csc = csc
-    csc.start()
+    arguments = docopt(__doc__)
+    port = arguments["<port>"]
+    port = int(port) if port else 9051
+    display_enabled = not arguments["--no-display"]
+
+    if display_enabled:
+        print "Starting confirmation display process."
+        csc = confirm.ConfirmScreenController(fullscreen=False)
+        rpcmethods.csc = csc
+        csc.start()
+    else:
+        print "Starting dummy confirmer. (Always says yes)"
+        csc = confirm.DummyConfirmScreenController()
+        rpcmethods.csc = csc
 
     print "Starting rpc server."
     rpcserver.app.run(host="0.0.0.0", port=9051, debug=False)
 
     print "Shutting down."
-    csc.shutdown()
+    if csc:
+        csc.shutdown()

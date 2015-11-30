@@ -23,6 +23,7 @@ def runrpc():
         result = method(*call["args"], **call["kwargs"])
         return jsonify({"return": result})
     except Exception as exc:
+        print exc
         return jsonify({"error": "rpc call threw an exception"})
 
 
