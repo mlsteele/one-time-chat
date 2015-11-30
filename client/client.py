@@ -2,11 +2,17 @@
 OTC Chat Client.
 
 Usage:
-  client.py <server_address> <user_name>
+  client.py <server_address> <device_address> <user_name>
+
+Options:
+  server_address    Address of the message relay server.
+  device_address    Address of the pad device rpc server.
+  user_name         Your username.
 """
 from docopt import docopt
 import requests
 from requests.exceptions import RequestException
+import os
 import sys
 import rpcclient
 
@@ -171,6 +177,8 @@ class OTC_Client(object):
                 print "User ID:", self.user_id
             elif command == "lookup":
                 raise NotImplementedError("need to implement username to uid lookup")
+            elif command == "clear":
+                os.system("clear")
             else:
                 print "Unrecognized command '{}'. Type 'help' for help.".format(command)
 
@@ -179,6 +187,7 @@ if __name__ == "__main__":
     arguments = docopt(__doc__)
 
     server_address = arguments["<server_address>"]
+    device_address = arguments["<device_address>"]
     user_name = arguments["<user_name>"]
     client = OTC_Client(server_address, user_name)
 
