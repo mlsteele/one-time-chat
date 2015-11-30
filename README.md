@@ -16,10 +16,27 @@ once the client is running you can send message as follows:
 send 'recipient' 'message'
 
 recieve messages by entering a newline
+
 ## Server
 Runs on a server and relays messages between clients.
 
-# Setting up the HRNG (RNG Hardware Device)
+## Running
+To run 2 clients on a single computer run the following commands.
+
+```
+    # Start the message relay server.
+    python server/server.py 9050
+    # Start Alice's device.
+    python device/main.py 9051 --no-display
+    # Start Bob's device.
+    python device/main.py 9052 --no-display
+    # Start Alice's client.
+    python client/client.py localhost:9050 localhost:9051 alice
+    # Start Bob's client.
+    python client/client.py localhost:9050 localhost:9052 bob
+```
+
+## Setting up the HRNG (RNG Hardware Device)
 (Adapted from http://ubld.it/products/support/truerng-install-guide)
 First download the rules and unzip them:
 
