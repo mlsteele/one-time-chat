@@ -1,9 +1,21 @@
+"""
+OTC Chat Client.
+
+Usage:
+  client.py <server_address> <user_name>
+"""
+from docopt import docopt
 import requests
+from requests.exceptions import RequestException
 import sys
 import rpcclient
 
-MAX_INDEX_LENGTH = 32 //TODO: agree on a valid number
+MAX_INDEX_LENGTH = 32 # TODO: agree on a valid number
 TAG_LENGTH=64
+
+class ClientException(Exception):
+    pass
+
 class OTC_Client(object):
     # A client is initialized with the address of the server it intends to
     # connect to.
@@ -14,6 +26,10 @@ class OTC_Client(object):
         self.server_address = server_address
         # TODO: remove for testing self.user_id = self.get_user_id()
         self.user_id = user_id
+
+        print "Server address:", self.server_address
+        print "User ID:", self.user_id
+
         self.connect()
         self.friends = {}
         self.rpc_client = rpcclient.RpcClient("http://localhost:9051")
@@ -63,9 +79,11 @@ class OTC_Client(object):
         raise NotImplementedError("TODO: clients need to encrypt messages")
 
     def connect(self):
-        res = requests.get(self.server_address + "/check")
-        # TODO: handle server errors
-        assert res.status_code == 200
+        try:
+            res = requests.get(self.server_address + "/check")
+            res.raise_for_status()
+        except RequestException as ex:
+            raise ClientException("Could not connect to server.", ex)
 
     def readFromDevice(self):
         raise NotImplementedError(
@@ -154,12 +172,12 @@ class OTC_Client(object):
 
 
 if __name__ == "__main__":
-    if (len(sys.argv) < 3):
-        print "ERROR: correct usage is client.py [server_address] [user_name]"
-        sys.exit(-1)
-    server_address = sys.argv[1]
-    user_name = sys.argv[2]
+    arguments = docopt(__doc__)
+
+    server_address = arguments["<server_address>"]
+    user_name = arguments["<user_name>"]
     client = OTC_Client(server_address, user_name)
+
     try:
         client.run()
     except KeyboardInterrupt:
