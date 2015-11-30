@@ -142,8 +142,9 @@ class OTC_Client(object):
 
 
     def run(self):
-        cursor = 0
-        print "Welcome to One Time Chat. Type 'help' for help"
+        cursor = 0 # First unread ref.
+        print "Welcome to One Time Chat. Type 'help' for help."
+
         while (True):
             print ""
             print "Cursor:", cursor
@@ -160,15 +161,18 @@ class OTC_Client(object):
                 print "=== help ==="
                 print "to send type send [target] [message]"
                 print "to recieve messages press enter."
+                print "to see your user id type id."
                 print "============"
             elif (command  == "send"):
                 sent_response = self.send(user_input[1]," ".join(user_input[2:]))
                 if sent_response[u'received']==True:
                     print "Message sent!"
             elif command == "id":
-                print self.user_id
+                print "User ID:", self.user_id
             elif command == "lookup":
                 raise NotImplementedError("need to implement username to uid lookup")
+            else:
+                print "Unrecognized command '{}'. Type 'help' for help.".format(command)
 
 
 if __name__ == "__main__":
