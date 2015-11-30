@@ -1,3 +1,10 @@
+"""
+OTC Chat Client.
+
+Usage:
+  server.py [<port>]
+"""
+from docopt import docopt
 from flask import Flask, request, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.autodoc import Autodoc
@@ -188,4 +195,10 @@ def getmessages():
     return jsonify(resdict)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=9050, debug=True)
+    arguments = docopt(__doc__)
+    port = arguments["<port>"]
+    port = int(port) if port else 9050
+
+    print "OTC Server starting..."
+    print "Server port:", port
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
