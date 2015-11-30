@@ -10,6 +10,16 @@ All methods that are RPCs should go here.
 # Confirm controller handle.
 csc = None
 
+def package(from_uid, to_uid, message_plaintext):
+    """ Encrypt a message from from_uid to to_uid.
+    Package it up with the index and MAC so the recipient can decode it.
+    """
+    # TODO: actually encrypt.
+    return {
+        "success": True,
+        "package": "---HIDDEN---" # TODO encrypt instead please.
+    }
+
 def encrypt(recipient_uid, message):
     """ Encrypts a message using a one time pad  
     recipient_uid is the id of the recipient. This impacts what pad will be used to encrypt

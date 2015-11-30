@@ -53,11 +53,21 @@ class OTC_Client(object):
         except RequestException as ex:
             raise ClientException("Could not connect to server.", ex)
 
+    def package(self, target, message):
+        res = self.rpc_client.package(self.user_id, target, message)
+        if not res["success"]:
+            raise ClientException("Message packaging failed on device.")
+        return res["package"]
+
+    def send_secure(self, target, message_plaintext):
+        package = self.package(target, message_plaintext)
+        self.send_plaintext(target, package)
+
     # TODO  FIX -- put all of this on device, cal it packet/package or something
     #  because it just makes more sense to do this all on device instead of
     #  sending shit back and forth 38 times. Also asking the person multiple
     #  times for confirmation is annoying
-    def secure_send(self,target,message):
+    def secure_send_old(self,target,message):
         """ Wrapper around send that encrypts the message before sending 
          mesage that needs to be sent is along the form :
             ciphertext = encrypt(message, pad)
@@ -179,7 +189,7 @@ class OTC_Client(object):
             elif (command  == "send"):
                 recipient = user_input[1]
                 message = " ".join(user_input[2:])
-                self.send_plaintext(recipient, message)
+                self.send_secure(recipient, message)
                 print "Message sent!"
             elif command == "id":
                 print "User ID:", self.user_id
