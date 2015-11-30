@@ -2,7 +2,7 @@ import requests
 import sys
 import rpcclient
 
-MAX_INDEX_LENGTH = 32
+MAX_INDEX_LENGTH = 32 //TODO: agree on a valid number
 TAG_LENGTH=64
 class OTC_Client(object):
     # A client is initialized with the address of the server it intends to
