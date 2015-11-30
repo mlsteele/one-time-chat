@@ -168,6 +168,8 @@ class OTC_Client(object):
                 print "to send type send [target] [message]"
                 print "to recieve messages press enter."
                 print "to see your user id type id."
+                print "to clear the screen type clear."
+                print "to quit type quit or q or exit."
                 print "============"
             elif (command  == "send"):
                 sent_response = self.send(user_input[1]," ".join(user_input[2:]))
@@ -179,6 +181,9 @@ class OTC_Client(object):
                 raise NotImplementedError("need to implement username to uid lookup")
             elif command == "clear":
                 os.system("clear")
+            elif command in ["quit", "q", "exit"]:
+                print "Bye."
+                sys.exit(0)
             else:
                 print "Unrecognized command '{}'. Type 'help' for help.".format(command)
 
