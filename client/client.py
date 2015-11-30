@@ -203,7 +203,7 @@ def normalize_address(address):
         pass
     # Add http protocol.
     if not address.startswith("http://"):
-        return "http://{}".format(server_address)
+        return "http://{}".format(address)
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ class RpcClient(object):
         except Exception as ex:
             raise RpcException("Could not connect to RPC server.", ex)
         if res.status_code != 200:
-            raise RpcException()
+            raise RpcException("Rpc server returned code {}".format(res.status_code))
         resj = res.json()
         if "error" in resj:
             raise RpcException(resj["error"])
