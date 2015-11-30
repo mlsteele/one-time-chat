@@ -17,7 +17,7 @@ def encrypt(recipient_uid, message):
     returns a dictionary with keys cipher_text, and index_used
     """
     ## I imagine the pad to be read_from_device depends on the recipient_uid, the index, and the length of the pad
-    return 0
+    #TODO: index_used might buggy
     (pad,index_used) = read_encrypt_pad(recipient_uid,len(message)) 
     cipher_list = encrypt.encrypt(message,pad)
     cipher_text = encrypt.pretty_print(cipher_list)
