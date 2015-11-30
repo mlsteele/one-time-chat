@@ -62,6 +62,19 @@ def me():
     uid = metadata_file[:metadata_file.index(".")]
     return uid    
 
+# Returns the relevant portion of the pad
+def read_decrypt_pad(sender_uid, decrypt_index, clen):
+    uid = me()
+    metadataFile = get_metadatafile_name(uid, sender_uid)
+    metadata = read_metadata(metadataFile)
+
+    storeFile = metadata["store_filename"]
+    with open(storeFile, "rb") as store:
+        pad = store.read()
+        d = metadata["direction"]
+
+        return pad[decrypt_index:decrypt_index+d*clen:d]
+
 # Returns (pad, index) 
 def read_encrypt_pad(recipient_uid, mlen):
     # Hack way to get the metadata file without the UID
@@ -74,13 +87,12 @@ def read_encrypt_pad(recipient_uid, mlen):
         pad = store.read()
         e = metadata["encrypt_index"]
         d = metadata["direction"]
-        if d in [1,-1]:
-            with open(metadataFile, "w") as mfile:
-                updates = {"encrypt_index": e+d*mlen}
-                mfile.write(json.dumps(update_metadata(metadata, updates)))
-            return (pad[e:e + d*mlen:d], e)
-        else:
-            raise ValueError("Metadata is corrupt; direction should be 1 or -1")
+
+        with open(metadataFile, "w") as mfile:
+            updates = {"encrypt_index": e+d*mlen}
+            metadata = update_metadata(metadata, updates)
+            mfile.write(json.dumps(metadata))
+        return (pad[e:e + d*mlen:d], e)
 
 def update_metadata(metadata, updates):
     del metadata["checksum"]

@@ -18,4 +18,8 @@ def read_metadata(filename):
         assert data["checksum"] == hash(frozenset(data_check.items()))
         assert data["uid"] != data["rid"]
         assert data["split_index"] >= 0 and data["split_index"] < data["n_bytes"]
+        assert data["direction"] in [1,-1]
+        assert data["rservice"] in ["random","urandom"]
+        assert data["encrypt_index"] >= 0 and data["encrypt_index"] < data["n_bytes"]
+        assert data["decrypt_index"] >= 0 and data["decrypt_index"] < data["n_bytes"]
         return data
