@@ -57,8 +57,7 @@ def xor(charA, charB):
     return chr(ord(charA) ^ ord(charB))
 
 
-def xorHelper(xxx_todo_changeme):
-    (charA, charB) = xxx_todo_changeme
+def xorHelper((charA,charB)):
     return xor(charA, charB)
 
 
