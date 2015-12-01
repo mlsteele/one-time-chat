@@ -1,4 +1,4 @@
-from metadata import METADATA_STEM
+from metadata import *
 
 # Returns the relevant portion of the pad
 def read_decrypt_pad(sid, uid, decrypt_index, clen):
