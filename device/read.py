@@ -2,6 +2,17 @@ from metadata import *
 
 # Returns the relevant portion of the pad
 def read_decrypt_pad(sid, uid, decrypt_index, clen):
+    """ Read the specified bytes from the pad for decryption.
+
+    Args:
+        sid: User ID of the sender.
+        uid: User ID of the recipient.
+        decrypt_index: The index to start reading.
+        clen: Amount of pad to retrieve in BYTES.
+    Returns:
+        Returns pad data as a string.
+    # TODO does what when out of bounds?
+    """
     metadataFile = get_metadatafile_name(uid, sid)
     metadata = read_metadata(metadataFile)
     assert decrypt_index >= 0 and decrypt_index < metadata["n_bytes"]
@@ -32,7 +43,7 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
 
 # Returns (pad, index) 
 def read_encrypt_pad(uid, rid, mlen):
-    """ Read the next mlen bytes from the pad.
+    """ Read the next mlen bytes from the pad for encryption.
 
     Advances the pointer in metadata.
     Will return new pad data each call.
@@ -45,6 +56,7 @@ def read_encrypt_pad(uid, rid, mlen):
         Returns a tuple of (pad data, index)
         pad data is a string.
         index is the start index of the portion of the pad used.
+    # TODO does what when out of pad?
     """
     metadataFile = get_metadatafile_name(uid, rid)
     metadata = read_metadata(metadataFile)

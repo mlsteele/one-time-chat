@@ -8,6 +8,7 @@ INDEX_MAX = (2**(INDEX_ENCODE_LENGTH * 8)) - 1
 # Length of tag in bytes.
 TAG_LENGTH = 64
 
+# TODO(miles): make asserts raise cryptoerrors.
 
 class CryptoError(Exception):
     pass
@@ -78,6 +79,29 @@ def unpackage(package, p_text, p_body):
         return message
     else:
         raise CryptoError("Integrity Error") 
+
+def pre_unpackage(package):
+    """Extract what information is necessary to fetch before unpackaging.
+
+    Returns:
+    {
+        p_text_index
+        p_body_index
+    }
+    Raises:
+        CryptoError on failure.
+    """
+    message_length = len(package) - INDEX_ENCODE_LENGTH - TAG_LENGTH 
+    assert message_length > 0
+    body_length = message_length + TAG_LENGTH
+    p_text_index = decode_index(package[:INDEX_ENCODE_LENGTH])
+    p_body_index = p_text_index + message_length
+    return {
+        "message_length": message_length,
+        "body_length": body_length,
+        "p_text_index": p_text_index,
+        "p_body_index": p_body_index,
+    }
 
 def encode_index(index_num):
     """
