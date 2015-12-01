@@ -46,7 +46,9 @@ def package(index, message, p_text, p_body):
 
     return self.send(target, index_used + message_body)
 
-
+def unpackage(package, p_text, p_body):
+    """ Extract the message and verify it's integrity """ 
+    raise NotImplementedError("this is not done.")
 def xor_string(a, b):
     if len(a) != len(b):
         raise ValueError("Messages must be the same length!")
