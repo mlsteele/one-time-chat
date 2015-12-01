@@ -19,7 +19,7 @@ def package(src_uid, dst_uid, message_plaintext):
     """
     # TODO: actually encrypt.
     (p_cipher,index) = read.read_encrypt_pad(src_uid, dst_uid,len(message_plaintext))
-    (p_body,not_used) = read.read_encrypt_(src_uid,dst_uid,len(message
+    (p_body,not_used) = read.read_encrypt_(src_uid,dst_uid,len(message)+TAG_LENGTH)
     package = crpyto.package(index,message,p_cipher,p_body)
     return {
         "success": True,
