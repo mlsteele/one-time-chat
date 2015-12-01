@@ -4,7 +4,7 @@ import struct
 # Length of encoded index in bytes.
 INDEX_ENCODE_LENGTH = 6
 # Maximum supported pad index.
-INDEX_MAX = (2**INDEX_ENCODE_LENGTH)-1
+INDEX_MAX = (2**(INDEX_ENCODE_LENGTH * 8)) - 1
 # Length of tag in bytes.
 TAG_LENGTH = 64
 
@@ -37,9 +37,9 @@ def package(index, message, p_text, p_body):
     """
     # Assert parameter types.
     assert isinstance(index, int)
-    assert isinstance(message, str)
-    assert isinstance(p_text, str)
-    assert isinstance(p_body, str)
+    assert isinstance(message, basestring)
+    assert isinstance(p_text, basestring)
+    assert isinstance(p_body, basestring)
 
     # Assert various properties we know should be true.
     assert 0 <= index <= INDEX_MAX
@@ -84,10 +84,10 @@ def encode_index(index_num):
     """
     Encode an index as a fixed length string.
     """
-    assert 0 <= index <= INDEX_MAX
+    assert 0 <= index_num <= INDEX_MAX
     assert INDEX_ENCODE_LENGTH < 8
     try:
-        eight_pack = struct.pack("<Q", index)
+        eight_pack = struct.pack("<Q", index_num)
     except struct.error as ex:
         raise CryptoError(ex)
     assert len(eight_pack) == 8
@@ -101,7 +101,7 @@ def decode_index(index_str):
     assert len(index_str) == INDEX_ENCODE_LENGTH
     eight_pack = index_str + "\x00" + "\x00"
     try:
-        return struct.unpack("<Q", index)
+        return struct.unpack("<Q", index_str)
     except struct.error as ex:
         raise CryptoError(ex)
 
@@ -115,7 +115,7 @@ def xorHelper((charA,charB)):
 
 
 def encrypt(message, pad):
-    return map(xorHelper, zip(message, pad))
+    return "".join(map(xorHelper, zip(message, pad)))
 
 
 def decrypt(cipher, pad):

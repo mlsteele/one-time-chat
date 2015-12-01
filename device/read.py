@@ -25,6 +25,20 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
 
 # Returns (pad, index) 
 def read_encrypt_pad(uid, rid, mlen):
+    """ Read the next mlen bytes from the pad.
+
+    Advances the pointer in metadata.
+    Will return new pad data each call.
+
+    Args:
+        uid: User ID of the sender.
+        rid: User ID of the recipient.
+        mlen: Amount of pad to retrieve in BYTES.
+    Returns:
+        Returns a tuple of (pad data, index)
+        pad data is a string.
+        index is the start index of the portion of the pad used.
+    """
     metadataFile = get_metadatafile_name(uid, rid)
     metadata = read_metadata(metadataFile)
 

@@ -15,14 +15,12 @@ def package(src_uid, dst_uid, message):
     Message is plaintext
     Package it up with the index and MAC so the recipient can decode it.
     """
-    # TODO: actually encrypt.
-    
     (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
-    (p_body, not_used) = read.read_encrypt_(src_uid, dst_uid, len(message)+crpyto.TAG_LENGTH)
-    package = crpyto.package(index, message, p_text, p_body)
+    (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
+    package = crypto.package(index, message, p_text, p_body)
     return {
         "success": True,
-        "package": package # TODO encrypt instead please.
+        "package": package
     }
 
 def unpackage(src_uid, dst_uid, package):

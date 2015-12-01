@@ -218,6 +218,9 @@ class DummyConfirmScreenController(object):
     def yn_prompt(self, text):
         return True
 
+    def shutdown(self):
+        pass
+
 
 def is_rpi():
     """Test if this code is running on a raspberry pi."""
