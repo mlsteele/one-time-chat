@@ -9,7 +9,6 @@ All methods that are RPCs should go here.
 
 # Confirm controller handle.
 csc = None
-TAG_LENGTH = 64 ### Constant length of SHA1 hash
 
 def package(src_uid, dst_uid, message):
     """ Encrypt a message from from_uid to to_uid.
@@ -17,14 +16,21 @@ def package(src_uid, dst_uid, message):
     Package it up with the index and MAC so the recipient can decode it.
     """
     # TODO: actually encrypt.
-    (p_cipher,index) = read.read_encrypt_pad(src_uid, dst_uid,len(message))
-    (p_body,not_used) = read.read_encrypt_(src_uid,dst_uid,len(message)+TAG_LENGTH)
-    package = crpyto.package(index,message,p_cipher,p_body)
+    
+    (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid,len(message))
+    (p_body, not_used) = read.read_encrypt_(src_uid, dst_uid,len(message)+crpyto.TAG_LENGTH)
+    package = crpyto.package(index, message, p_text, p_body)
     return {
         "success": True,
         "package": package # TODO encrypt instead please.
     }
 
+def unpackage(src_uid, dst_uid, package):
+    message_length = len(package) - crypto.INDEX_MAX - crpto.TAG_LENGTH 
+    body_length = len(package) - crypto.INDEX_MAX
+    p_text = read.read_decrypt_pad(dst_uid, message_length)
+    p_body = read.read_decrypt_pad(dst_uid, body_length)
+    message = crypto.unpackage(package, p_text, p_body)
 def encrypt(recipient_uid, message):
     """ Encrypts a message using a one time pad  
     recipient_uid is the id of the recipient. This impacts what pad will be used to encrypt
