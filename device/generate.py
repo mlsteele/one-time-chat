@@ -112,7 +112,7 @@ def make_metadata(uid0, uid1, n_bytes, rservice):
         data["split_index"] = n_bytes / 2
         data["direction"] = direction
         data["encrypt_index"] = 0 if direction == 1 else n_bytes-1
-        data["decrypt_index"] = n_bytes-1 if direction == 1 else 0
+        data["decrypt_indexes"] = ""
         # These two must always go last, in this order
         data["n_eles"] = len(data.items())+2
         data["checksum"] = hash(frozenset(data.items()))

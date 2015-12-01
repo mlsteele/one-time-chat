@@ -21,7 +21,7 @@ def read_metadata(filename):
         assert data["direction"] in [1,-1]
         assert data["rservice"] in ["random","urandom"]
         assert data["encrypt_index"] >= 0 and data["encrypt_index"] < data["n_bytes"]
-        assert data["decrypt_index"] >= 0 and data["decrypt_index"] < data["n_bytes"]
+        
         return data
 
 def update_metadata(metadata, updates):
