@@ -1,7 +1,17 @@
 import hashlib
+import struct
 
-# INDEX_MAX = ?
-# INDEX_ENCODE_LENGTH = ?
+# Length of encoded index in bytes.
+INDEX_ENCODE_LENGTH = 6
+# Maximum supported pad index.
+INDEX_MAX = (2**INDEX_ENCODE_LENGTH)-1
+# Length of tag in bytes.
+TAG_LENGTH = 64
+
+
+class CryptoError(Exception):
+    pass
+
 
 def package(index, message, p_text, p_body):
     """
@@ -32,19 +42,23 @@ def package(index, message, p_text, p_body):
     assert isinstance(p_body, str)
 
     # Assert various properties we know should be true.
-    raise NotImplementedError("this is not done.")
+    assert 0 <= index <= INDEX_MAX
+    assert len(p_text) == len(message)
+    assert len(p_body) == len(message) + TAG_LENGTH
 
-    response = self.rpc_client.encrypt(target, message)
-    cipher_text = response["cipher_text"]
-    index_used = response["index_used"]
+    # Encrypt the plaintext.
+    ciphertext = encrypt(message, p_text)
 
-    tag = self.rpc_client.sign(index_used + ciphertext)
+    # Encode the index.
+    i_enc = encode_index(index)
+    assert len(i_enc) == INDEX_ENCODE_LENGTH
 
-    integrity = self.rpc_client.encrypt(target, ciphertext + tag)
+    # Create the integrity tag.
+    tag = sha(i_enc + ciphertext)
+    assert len(tag) == TAG_LENGTH
 
-    message_body = integrity["cipher_text"]
+    return i_enc + ciphertext + tag
 
-    return self.send(target, index_used + message_body)
 
 def unpackage(package, p_text, p_body):
     """ Extract the message and verify it's integrity """ 
@@ -64,10 +78,32 @@ def unpackage(package, p_text, p_body):
     isSafe = self.rpc_client.verfy(packet_sender,index+ciphertext,tag)
     if isSafe:
        message = self.rpc_client.encrypt(packet_sender,ciphertext,index)
-def xor_string(a, b):
-    if len(a) != len(b):
-        raise ValueError("Messages must be the same length!")
-    return a ^ b
+
+
+def encode_index(index_num):
+    """
+    Encode an index as a fixed length string.
+    """
+    assert 0 <= index <= INDEX_MAX
+    assert INDEX_ENCODE_LENGTH < 8
+    try:
+        eight_pack = struct.pack("<Q", index)
+    except struct.error as ex:
+        raise CryptoError(ex)
+    assert len(eight_pack) == 8
+    return eight_pack[:INDEX_ENCODE_LENGTH]
+
+
+def decode_index(index_str):
+    """
+    Decode an index encoded as a fixed length string.
+    """
+    assert len(index_str) == INDEX_ENCODE_LENGTH
+    eight_pack = index_str + "\x00" + "\x00"
+    try:
+        return struct.unpack("<Q", index)
+    except struct.error as ex:
+        raise CryptoError(ex)
 
 
 def xor(charA, charB):
@@ -86,23 +122,5 @@ def decrypt(cipher, pad):
     return map(xorHelper, zip(cipher, pad))
 
 
-def pretty_print(liste):
-    string = ''
-    for i in liste:
-        string += i
-    print string
-    return string
-
-# For now let's just do
-# i || p2 xor ((p1 xor m) || MAC(p1 xor m))
-# j || pj xor (i || pi xor m || MAC(i || pi xor m))
-
-
-def MAC(m, key=-1):
-    h = hashlib.sha256()
-    h.update(m)
-    return h.digest()
-
-
-def hash(message):
-    return hashlib.sha512(message).hexdigest()
+def sha(stuff):
+    return hashlib.sha512(stuff).digest()
