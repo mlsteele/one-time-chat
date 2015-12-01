@@ -11,7 +11,8 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
         clen: Amount of pad to retrieve in BYTES.
     Returns:
         Returns pad data as a string.
-    # TODO does what when out of bounds?
+    Throws:
+        AssertionError if any index goes out of bounds
     """
     metadataFile = get_metadatafile_name(uid, sid)
     metadata = read_metadata(metadataFile)
@@ -56,7 +57,8 @@ def read_encrypt_pad(uid, rid, mlen):
         Returns a tuple of (pad data, index)
         pad data is a string.
         index is the start index of the portion of the pad used.
-    # TODO does what when out of pad?
+    Throws:
+        AssertionError if any index goes out of bounds
     """
     metadataFile = get_metadatafile_name(uid, rid)
     metadata = read_metadata(metadataFile)
