@@ -64,28 +64,6 @@ class OTC_Client(object):
         package = self.package(target, message_plaintext)
         self.send_plaintext(target, package)
 
-    # TODO  FIX -- put all of this on device, cal it packet/package or something
-    #  because it just makes more sense to do this all on device instead of
-    #  sending shit back and forth 38 times. Also asking the person multiple
-    #  times for confirmation is annoying
-    def secure_send_old(self,target,message):
-        """ Wrapper around send that encrypts the message before sending 
-         mesage that needs to be sent is along the form :
-            ciphertext = encrypt(message, pad)
-            index_used || encrypt ( ciphertext || MAC (index_used || ciphertext) )
-             """
-        response = self.rpc_client.encrypt(target,message)
-        cipher_text = response["cipher_text"]
-        index_used = response["index_used"]
-        
-        tag = self.rpc_client.sign(index_used+ciphertext)
-        
-        integrity = self.rpc_client.encrypt(target, ciphertext+tag)
-
-        message_body = integrity["cipher_text"]
-        
-        return self.send(target,index_used+message_body)
-
     def receive(self):
         raise NotImplementedError("TODO: write receive")
 

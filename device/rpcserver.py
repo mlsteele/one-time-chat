@@ -3,6 +3,7 @@ import rpcmethods
 from flask import Flask, request, jsonify
 import os
 import inspect
+import traceback
 
 app = Flask(__name__)
 
@@ -23,7 +24,7 @@ def runrpc():
         result = method(*call["args"], **call["kwargs"])
         return jsonify({"return": result})
     except Exception as exc:
-        print exc
+        traceback.print_exc()
         return jsonify({"error": "rpc call threw an exception"})
 
 

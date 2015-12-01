@@ -11,14 +11,16 @@ All methods that are RPCs should go here.
 
 # Confirm controller handle.
 csc = None
+TAG_LENGTH = 64 ### Constant length of SHA1 hash
 
-def package(src_uid, dst_uid, message_plaintext):
+def package(src_uid, dst_uid, message):
     """ Encrypt a message from from_uid to to_uid.
+    Message is plaintext
     Package it up with the index and MAC so the recipient can decode it.
     """
     # TODO: actually encrypt.
-    (p_cipher,index) = read_encrypt_pad
-
+    (p_cipher,index) = read.read_encrypt_pad(src_uid, dst_uid,len(message))
+    (p_body,not_used) = read.read_encrypt_(src_uid,dst_uid,len(message)+TAG_LENGTH)
     package = crpyto.package(index,message,p_cipher,p_body)
     return {
         "success": True,
