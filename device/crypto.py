@@ -112,13 +112,13 @@ def encode_index(index_num):
     """
     Encode an index as a fixed length string.
     """
-    assert 0 <= index_num <= INDEX_MAX
-    assert INDEX_ENCODE_LENGTH < 8
+    cassert(0 <= index_num <= INDEX_MAX)
+    cassert(INDEX_ENCODE_LENGTH < 8)
     try:
         eight_pack = struct.pack("<Q", index_num)
     except struct.error as ex:
         raise CryptoError(ex)
-    assert len(eight_pack) == 8
+    cassert(len(eight_pack) == 8)
     return eight_pack[:INDEX_ENCODE_LENGTH]
 
 
@@ -126,8 +126,8 @@ def decode_index(index_str):
     """
     Decode an index encoded as a fixed length string.
     """
-    assert isinstance(index_str, str)
-    assert len(index_str) == INDEX_ENCODE_LENGTH
+    cassert(isinstance(index_str, str))
+    cassert(len(index_str) == INDEX_ENCODE_LENGTH)
     eight_pack = index_str + "\x00" + "\x00"
     try:
         return struct.unpack("<Q", eight_pack)[0]
@@ -153,3 +153,8 @@ def decrypt(cipher, pad):
 
 def sha(stuff):
     return hashlib.sha512(stuff).digest()
+
+def cassert(condition, error=None):
+    """Assert and throw a CryptoError if it fails."""
+    if not condition:
+        raise CryptoError(error)
