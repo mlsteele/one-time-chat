@@ -18,15 +18,10 @@ def package(index, message, p_text, p_body):
     """
     Secure a message with encryption and integrity protection.
 
-    package := i || body
+    package := i || (p_body XOR body)
     body := ciphertext || tag
     tag := SHA(i || ciphertext)
     ciphertext := p_text XOR message
-
-    as defined aboue, total package:
-       i || (p_text XOR message) || SHA(i || (p_text || ciphertext))
-    but it SHOULD be:
-       i || (p_text XOR message) || p_body XOR SHA(i || (p_text || ciphertext))
 
     - '||' means concatenation.
     - i is a fixed-length encoding of the pad index.
@@ -63,7 +58,9 @@ def package(index, message, p_text, p_body):
     tag = sha(i_enc + ciphertext)
     assert len(tag) == TAG_LENGTH
 
-    return i_enc + ciphertext + tag
+    body = ciphertext + tag
+
+    return i_enc + encrypt(body, p_body)
 
 
 def unpackage(package, p_text, p_body):
