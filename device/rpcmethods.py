@@ -60,6 +60,7 @@ def unpackage(src_uid, dst_uid, package_b64):
         return {
                 "success" : False,
         }
+
 def encrypt(recipient_uid, message):
     """ Encrypts a message using a one time pad  
     recipient_uid is the id of the recipient. This impacts what pad will be used to encrypt

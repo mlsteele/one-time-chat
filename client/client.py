@@ -55,6 +55,7 @@ class OTC_Client(object):
             raise ClientException("Could not connect to server.", ex)
 
     def package(self, target, message):
+        """Package a message on the device."""
         res = self.rpc_client.package(self.user_id, target, message)
         if not res["success"]:
             raise ClientException("Message packaging failed on device.")
@@ -106,7 +107,6 @@ class OTC_Client(object):
         payload = {
             "recipient_uid": self.user_id,
             "start_ref": start_ref,
-            # maxcount optional
         }
         try:
             res = requests.get(self.server_address + "/getmessages", params=payload)
@@ -115,30 +115,12 @@ class OTC_Client(object):
             raise ClientException("Could not get messages from server.", ex)
         return res.json()
 
-    def secure_get_messages(self,start_ref):
-        """Get all the ciphertext and return a list of messages.
-        packets recieved are in the format 
-        index || encrypt ( ciphertext || SHA ( i || ciphertext ) )
-
-        """
-        payload = {
-                "recipient_uid": self.user_id,
-                "start_ref": start_ref,
-        }
-        res = requests.get(self.server_address + "/getmessages",params=payload)
-        assert res.status_code ==200
-        response_data = res.json()
-        recieved_packets = response_data[u'messages']
-        responses = []
-        ### PLEASE REVIEW I PROBABLY !@#$ED UP- anpere ###
-        for packet in recieved_packets:
-            packet_sender = packet[u'sender_uid']
-            package = packet[u'contents']
-            unpackage = self.rpc_client.unpackage(packet_sender,self.uid,package)
-            if unpackage["success"]:
-                message = unpackage["message"]
-                responses.append(packet_sender+":"+message)
-        return responses
+    def show_package(self, from_uid, package):
+        res = self.rpc_client.unpackage(from_uid, self.user_id, package)
+        if res["success"]:
+            print from_uid + ": " + res["message"]
+        else:
+            print from_uid + ": " + "[Failed to decode]"
 
     def run(self):
         print "Welcome to One Time Chat. Type 'help' for help."
@@ -152,8 +134,8 @@ class OTC_Client(object):
                 response = self.get_messages(self.nextref)
                 messages = response[u'messages']
                 for message in messages:
-                    print message[u'sender_uid'] + ": " + message[u'contents']
                     self.nextref = message['ref'] + 1
+                    self.show_package(message['sender_uid'], message['contents'])
                 continue
             command = user_input[0]
             if ( command == "help"):
