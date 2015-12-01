@@ -38,14 +38,19 @@ def package(src_uid, dst_uid, message):
         }
     except CryptoError:
         return {
-                "success": False,
+            "success": False,
+            "error": "Encryption failed.",
         }
 
 def unpackage(src_uid, dst_uid, package_b64):
+    return {
+        "success": False,
+        "error": "Unpackage doesn't work."
+    }
     # TODO verify bit release with user
     # b64 decode the package for decryption.
     package = base64.b64decode(package_b64)
-    message_length = len(package) - crypto.INDEX_ENCODE_LENGTH - crpto.TAG_LENGTH 
+    message_length = len(package) - crypto.INDEX_ENCODE_LENGTH - crypto.TAG_LENGTH 
     body_length = len(package) - crypto.INDEX_ENCODE_LENGTH
     p_text = read.read_decrypt_pad(dst_uid, message_length)
     p_body = read.read_decrypt_pad(dst_uid, body_length)
@@ -53,12 +58,13 @@ def unpackage(src_uid, dst_uid, package_b64):
     try:
         message = crypto.unpackage(package, p_text, p_body)  
         return {
-                "success" : True,
-                "message" : message
+            "success" : True,
+            "message" : message,
         }
     except CryptoError:
         return {
-                "success" : False,
+            "success" : False,
+            "error": "Decryption failed.",
         }
 
 def encrypt(recipient_uid, message):

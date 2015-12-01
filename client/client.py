@@ -120,7 +120,8 @@ class OTC_Client(object):
         if res["success"]:
             print from_uid + ": " + res["message"]
         else:
-            print from_uid + ": " + "[Failed to decode]"
+            error = res.get("error")
+            print "Failed to decode message from '{}' ({})".format(from_uid, error)
 
     def run(self):
         print "Welcome to One Time Chat. Type 'help' for help."
