@@ -72,8 +72,6 @@ def decrypt_index_used(sid, uid, decrypt_index):
     # decrypt_log is of the form "1-10,10-15,15-22,"
     # indexes_used stores ["1-10","10-15","15-22"]
     indexes_used = metadata["decrypt_log"].split(",")[:-1]
-    print "indexes_used in decrypt_index_used is:"
-    print indexes_used
     
     # If decrypt_index is within the range of any of
     #  the elements in the log, then the index has
