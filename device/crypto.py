@@ -23,6 +23,11 @@ def package(index, message, p_text, p_body):
     tag := SHA(i || ciphertext)
     ciphertext := p_text XOR message
 
+    as defined aboue, total package:
+       i || (p_text XOR message) || SHA(i || (p_text || ciphertext))
+    but it SHOULD be:
+       i || (p_text XOR message) || p_body XOR SHA(i || (p_text || ciphertext))
+
     - '||' means concatenation.
     - i is a fixed-length encoding of the pad index.
     - SHA refers to a SHA256 hash.
