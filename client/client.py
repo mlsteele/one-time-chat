@@ -143,7 +143,8 @@ class OTC_Client(object):
         ### PLEASE REVIEW I PROBABLY !@#$ED UP- anpere ###
         for packet in recieved_packets:
             packet_sender = packet[u'sender_uid']
-            packet_message = packet[u'contents']
+            package = packet[u'contents']
+            message = self.rpc_client.unpackage(packet_sender,self.uid,package)
             index = packet_message[:MAX_INDEX_LENGTH]
             packet_body = packet_message[MAX_INDEX_LENGTH:]
             
