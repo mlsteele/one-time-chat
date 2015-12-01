@@ -3,6 +3,7 @@ import read
 import os
 import json
 import base64
+import traceback
 
 """
 All methods that are RPCs should go here.
@@ -28,6 +29,10 @@ def package(src_uid, dst_uid, message):
     message = message.encode("utf-8")
     (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
     (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
+
+    print "package    index:{}    message:{}    p_body:{}".format(
+        index, base64.b64encode(message[:4]), base64.b64encode(p_body[:4]))
+
     try:
         package = crypto.package(index, message, p_text, p_body)
         # Base64 encode the package for transport.
@@ -37,6 +42,7 @@ def package(src_uid, dst_uid, message):
             "package": package_b64,
         }
     except crypto.CryptoError:
+        traceback.print_exc()
         return {
             "success": False,
             "error": "Encryption failed.",
@@ -51,6 +57,7 @@ def unpackage(src_uid, dst_uid, package_b64):
     try:
         pre = crypto.pre_unpackage(package)
     except crypto.CryptoError:
+        traceback.print_exc()
         return {
             "success" : False,
             "error": "Decryption failed.",
@@ -66,6 +73,9 @@ def unpackage(src_uid, dst_uid, package_b64):
     p_body = read.read_decrypt_pad(src_uid, dst_uid,
                                    p_body_index, body_length)
 
+    print "unpackage    index:{}    message:{}    p_body:{}".format(
+        p_text_index, base64.b64encode(message[:4]), base64.b64encode(p_body[:4]))
+
     try:
         message = crypto.unpackage(package, p_text, p_body)  
         return {
@@ -73,6 +83,7 @@ def unpackage(src_uid, dst_uid, package_b64):
             "message" : message,
         }
     except crypto.CryptoError:
+        traceback.print_exc()
         return {
             "success" : False,
             "error": "Decryption failed.",

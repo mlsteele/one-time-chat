@@ -121,10 +121,11 @@ def decode_index(index_str):
     """
     Decode an index encoded as a fixed length string.
     """
+    assert isinstance(index_str, str)
     assert len(index_str) == INDEX_ENCODE_LENGTH
     eight_pack = index_str + "\x00" + "\x00"
     try:
-        return struct.unpack("<Q", index_str)
+        return struct.unpack("<Q", eight_pack)[0]
     except struct.error as ex:
         raise CryptoError(ex)
 
