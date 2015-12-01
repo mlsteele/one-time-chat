@@ -24,8 +24,8 @@ def package(src_uid, dst_uid, message):
     }
 
 def unpackage(src_uid, dst_uid, package):
-    message_length = len(package) - crypto.INDEX_MAX - crpto.TAG_LENGTH 
-    body_length = len(package) - crypto.INDEX_MAX
+    message_length = len(package) - crypto.INDEX_ENCODE_LENGTH - crpto.TAG_LENGTH 
+    body_length = len(package) - crypto.INDEX_ENCODE_LENGTH
     p_text = read.read_decrypt_pad(dst_uid, message_length)
     p_body = read.read_decrypt_pad(dst_uid, body_length)
     message = crypto.unpackage(package, p_text, p_body)

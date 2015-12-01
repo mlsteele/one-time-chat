@@ -62,23 +62,22 @@ def package(index, message, p_text, p_body):
 
 def unpackage(package, p_text, p_body):
     """ Extract the message and verify it's integrity """ 
-    raise NotImplementedError("this is not done.")
-    packet_sender = packet[u'sender_uid']
-    packet_message = packet[u'contents']
-    index = packet_message[:MAX_INDEX_LENGTH]
-    packet_body = packet_message[MAX_INDEX_LENGTH:]
     
-    plain_body = self.rpc_client.decrypt(packet_sender,
-            packet_body,
-            int(index)+len(packet_body)-TAG_LENGTH)
+    # extract package contents
+    index = package[:INDEX_ENCODE_LENGTH]
+    encrypted_body = package[INDEX_ENCODE_LENGTH:]
+    plain_body = decrypt(encrypted_body,p_body)
     ## the starting index of the body pad: index + length of cipher text
     ## length of cipher text = length of body - length of tag
-    tag = plain_body[-64:]
-    ciphertext = plain_body[:-64]
-    isSafe = self.rpc_client.verfy(packet_sender,index+ciphertext,tag)
-    if isSafe:
-       message = self.rpc_client.encrypt(packet_sender,ciphertext,index)
+    tag = plain_body[-1*TAG_LENGTH:]
+    ciphertext = plain_body[:-1*TAG_LENGTH]
 
+    # integrity check
+    if sha(index + ciphertext) == tag:
+        message = decrypt(ciphertext,p_text)
+        return message
+    else:
+        raise CryptoError("Integrity Error") 
 
 def encode_index(index_num):
     """
@@ -119,7 +118,7 @@ def encrypt(message, pad):
 
 
 def decrypt(cipher, pad):
-    return map(xorHelper, zip(cipher, pad))
+    return "".join(map(xorHelper, zip(cipher, pad)))
 
 
 def sha(stuff):
