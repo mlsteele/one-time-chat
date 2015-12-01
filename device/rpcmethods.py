@@ -17,19 +17,33 @@ def package(src_uid, dst_uid, message):
     """
     (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
     (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
-    package = crypto.package(index, message, p_text, p_body)
-    return {
-        "success": True,
-        "package": package
-    }
+    try:
+        package = crypto.package(index, message, p_text, p_body)
+        return {
+            "success": True,
+            "package": package
+        }
+    except CryptoError:
+        return {
+                "success": False,
+        }
 
 def unpackage(src_uid, dst_uid, package):
     message_length = len(package) - crypto.INDEX_ENCODE_LENGTH - crpto.TAG_LENGTH 
     body_length = len(package) - crypto.INDEX_ENCODE_LENGTH
     p_text = read.read_decrypt_pad(dst_uid, message_length)
     p_body = read.read_decrypt_pad(dst_uid, body_length)
-    message = crypto.unpackage(package, p_text, p_body)
 
+    try:
+        message = crypto.unpackage(package, p_text, p_body)  
+        return {
+                "success" : True,
+                "message" : message
+        }
+    except CryptoError:
+        return {
+                "success" : False,
+        }
 def encrypt(recipient_uid, message):
     """ Encrypts a message using a one time pad  
     recipient_uid is the id of the recipient. This impacts what pad will be used to encrypt
