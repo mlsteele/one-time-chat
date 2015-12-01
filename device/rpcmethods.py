@@ -73,8 +73,8 @@ def unpackage(src_uid, dst_uid, package_b64):
     p_body = read.read_decrypt_pad(src_uid, dst_uid,
                                    p_body_index, body_length)
 
-    print "unpackage    index:{}    message:{}    p_body:{}".format(
-        p_text_index, base64.b64encode(message[:4]), base64.b64encode(p_body[:4]))
+    print "unpackage    index:{}    package:{}    p_body:{}".format(
+        p_text_index, base64.b64encode(package[:4]), base64.b64encode(p_body[:4]))
 
     try:
         message = crypto.unpackage(package, p_text, p_body)  
