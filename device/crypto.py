@@ -1,17 +1,39 @@
 import hashlib
 
-# TODO  FIX -- put all of this on device, cal it packet/package or something
-#  because it just makes more sense to do this all on device instead of
-#  sending shit back and forth 38 times. Also asking the person multiple
-#  times for confirmation is annoying
+# INDEX_MAX = ?
+# INDEX_ENCODE_LENGTH = ?
 
+def package(index, message, p_text, p_body):
+    """
+    Secure a message with encryption and integrity protection.
 
-def package(self, target, message):
-    """ Wrapper around send that encrypts the message before sending
-        mesage that needs to be sent is along the form :
-        ciphertext = encrypt(message, pad)
-        index_used || encrypt ( ciphertext || MAC (index_used || ciphertext) )
-            """
+    package := i || body
+    body := ciphertext || tag
+    tag := SHA(i || ciphertext)
+    ciphertext := p_text XOR message
+
+    - '||' means concatenation.
+    - i is a fixed-length encoding of the pad index.
+    - SHA refers to a SHA256 hash.
+
+    Args:
+        index: Index into the pad used. (int)
+        message: Plaintext message to encrypt. (string)
+        p_cipher: Bytes to use for XORing with message. (string)
+        p_body: Bytes to use for XORing with message || tag. (string)
+
+    Returns:
+        The secured message, ready for sending. (string)
+    """
+    # Assert parameter types.
+    assert isinstance(index, int)
+    assert isinstance(message, str)
+    assert isinstance(p_text, str)
+    assert isinstance(p_body, str)
+
+    # Assert various properties we know should be true.
+    raise NotImplementedError("this is not done.")
+
     response = self.rpc_client.encrypt(target, message)
     cipher_text = response["cipher_text"]
     index_used = response["index_used"]
