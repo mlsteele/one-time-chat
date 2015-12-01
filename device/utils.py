@@ -32,3 +32,4 @@ def update_metadata(metadata, updates):
         metadata[key] = updates[key]
     metadata["checksum"] = hash(frozenset(metadata.items()))
     return metadata
+

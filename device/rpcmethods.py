@@ -70,13 +70,8 @@ def verify(sender_uid,message,tag):
     return encrypt.hash(message)==tag
 
 # Returns UID of this device
-def me(true_id=None):
-    if true_id: # Override for when multiple clients on one computer
-        return true_id
-    files = os.listdir(".")
-    metadata_file = filter(lambda f: f.find(METADATA_STEM) > -1, files)[0]
-    uid = metadata_file[:metadata_file.index(".")]
-    return uid
+def whoami(true_id=None):
+    return read.whoami(true_id)
 
 def echo(*args, **kwargs):
     """Echo back all arguments (for testing rpc mechanism)."""
@@ -96,3 +91,6 @@ def add(a, b):
 def test_prompt():
     print "test prompt requested", csc
     return csc.yn_prompt("[Fake] Release 2000\nbits of pad?")
+
+def teapot():
+    return "Error 418: I'm a teapot"

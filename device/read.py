@@ -1,7 +1,8 @@
+from utils import METADATA_STEM
+
 # Returns the relevant portion of the pad
-def read_decrypt_pad(sender_uid, decrypt_index, clen):
-    uid = me()
-    metadataFile = get_metadatafile_name(uid, sender_uid)
+def read_decrypt_pad(sid, uid, decrypt_index, clen):
+    metadataFile = get_metadatafile_name(uid, sid)
     metadata = read_metadata(metadataFile)
     assert decrypt_index >= 0 and decrypt_index < metadata["n_bytes"]
 
@@ -23,9 +24,8 @@ def read_decrypt_pad(sender_uid, decrypt_index, clen):
         return pad[decrypt_index:endIndex:d]
 
 # Returns (pad, index) 
-def read_encrypt_pad(recipient_uid, mlen):
-    uid = me()
-    metadataFile = get_metadatafile_name(uid, recipient_uid)
+def read_encrypt_pad(uid, rid, mlen):
+    metadataFile = get_metadatafile_name(uid, rid)
     metadata = read_metadata(metadataFile)
 
     storeFile = metadata["store_filename"]
@@ -33,19 +33,19 @@ def read_encrypt_pad(recipient_uid, mlen):
         pad = store.read()
         e = metadata["encrypt_index"]
         d = metadata["direction"]
+        endIndex = e + d * mlen
+        assert endIndex >= 0 and endIndex < metadata["n_bytes"]
 
         with open(metadataFile, "w") as mfile:
             updates = {"encrypt_index": e+d*mlen}
             metadata = update_metadata(metadata, updates)
             mfile.write(json.dumps(metadata))
-        assert e+d*mlen >= 0 and e+d*mlen < metadata["n_bytes"]
-        return (pad[e:e + d*mlen:d], e)
+        return (pad[e:endIndex:d], e)
 
 # True if the decrypt index requested has been used before
 #  to decrypt 
-def decrypt_index_used(sender_uid, decrypt_index):
-    uid = me()
-    metadataFile = get_metadatafile_name(uid, sender_uid)
+def decrypt_index_used(sid, uid, decrypt_index):
+    metadataFile = get_metadatafile_name(uid, sid)
     metadata = read_metadata(metadataFile)
 
     # Of the form "1-10,10-15,15-22,"
@@ -54,11 +54,22 @@ def decrypt_index_used(sender_uid, decrypt_index):
 
 # True if this decrypt index requested has skipped over
 #  a portion of the pad
-def decrypt_index_skipped(sender_uid, decrypt_index, history=10):
-    uid = me()
-    metadataFile = get_metadatafile_name(uid, sender_uid)
+def decrypt_index_skipped(sid, uid, decrypt_index, history=-1):
+    metadataFile = get_metadatafile_name(uid, sid)
     metadata = read_metadata(metadataFile)
     
+    history = history if history > 0 else 0
     indexes_used = metadata["decrypt_indexes"].split(",")[-history:]
     return not any(map(lambda s: s.split("-")[1] == str(decrypt_index),
                        indexes_used))
+
+# Returns UID of this device
+def whoami(override_true_id=None):
+    # Override just in case
+    if override_true_id:
+        return override_true_id
+
+    files = os.listdir(".")
+    metadata_file = filter(lambda f: f.find(METADATA_STEM) > -1, files)[0]
+    uid = metadata_file[:metadata_file.index(".")]
+    return uid
