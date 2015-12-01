@@ -12,9 +12,14 @@ def runrpc():
     call = request.json
 
     try:
+        method_name = call["method"]
         method = getattr(rpcmethods, call["method"])
     except AttributeError:
         return jsonify({"error": "no such rpc method"})
+
+    # Only allow methods in the allow list.
+    if method_name not in rpcmethods.ALLOW_LIST:
+        return jsonify({"error": "method not in allow list"})
 
     # Only allow methods of rpcmethods to be called.
     if not inspect.isfunction(method):
@@ -22,7 +27,7 @@ def runrpc():
 
     try:
         result = method(*call["args"], **call["kwargs"])
-        print "ran rpc: ", call["method"]
+        print "ran rpc: ", method_name
         return jsonify({"return": result})
     except Exception as exc:
         traceback.print_exc()

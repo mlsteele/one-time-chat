@@ -8,7 +8,13 @@ import base64
 All methods that are RPCs should go here.
 """
 
-# TODO add explicit rpc allow list.
+ALLOW_LIST = [
+    "package",
+    "unpackage",
+    "whoami",
+    "test_prompt",
+    "teapot",
+]
 
 # Confirm controller handle.
 csc = None
@@ -99,21 +105,6 @@ def verify(sender_uid,message,tag):
 # Returns UID of this device
 def whoami(true_id=None):
     return read.whoami(true_id)
-
-def echo(*args, **kwargs):
-    """Echo back all arguments (for testing rpc mechanism)."""
-    return {
-        "received_args": args,
-        "received_kwargs": kwargs
-    }
-
-def alwaysfail(*args, **kwargs):
-    """Always return an error (for testing rpc mechanism)."""
-    raise ValueError("this is normal.")
-
-def add(a, b):
-    """Add two numbers (for testing rpc mechanism)."""
-    return a + b
 
 def test_prompt():
     print "test prompt requested", csc
