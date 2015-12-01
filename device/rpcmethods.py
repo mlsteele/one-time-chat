@@ -1,9 +1,7 @@
-from utils import *
 import crypto
 import read
 import os
 import json
-
 
 """
 All methods that are RPCs should go here.

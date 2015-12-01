@@ -20,7 +20,7 @@ Options:
 -h --help             Show this screen and exit
 """
 
-from utils import *
+from metadata import *
 from docopt import docopt
 import hashlib
 import os
