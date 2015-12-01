@@ -24,6 +24,7 @@ def package(src_uid, dst_uid, message):
     Message is plaintext.
     Package it up with the index and MAC so the recipient can decode it.
     """
+    # TODO verify bit release with user
     message = message.encode("utf-8")
     (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
     (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
@@ -41,6 +42,7 @@ def package(src_uid, dst_uid, message):
         }
 
 def unpackage(src_uid, dst_uid, package_b64):
+    # TODO verify bit release with user
     # b64 decode the package for decryption.
     package = base64.b64decode(package_b64)
     message_length = len(package) - crypto.INDEX_ENCODE_LENGTH - crpto.TAG_LENGTH 

@@ -71,24 +71,13 @@ class OTC_Client(object):
     def receive(self):
         raise NotImplementedError("TODO: write receive")
 
-    def decrypt(self, message, pad_index):
-        # TODO: give ability of default index
-        raise NotImplementedError("TODO: clients need to decrypt messages")
-
-    def encrypt(self, encrypt, pad_index):
-        raise NotImplementedError("TODO: clients need to encrypt messages")
-
     def connect(self):
+        """Check that the message relay server is alive."""
         try:
             res = requests.get(self.server_address + "/check")
             res.raise_for_status()
         except RequestException as ex:
             raise ClientException("Could not connect to server.", ex)
-
-    def readFromDevice(self):
-        raise NotImplementedError(
-            "TODO: clients need to be able to read from their device")
-            # TODO: http form maybe
 
     def get_user_id(self):
         print "TODO: clients need to be able to fetch user id from their device"
@@ -150,6 +139,7 @@ class OTC_Client(object):
                 message = unpackage["message"]
                 responses.append(packet_sender+":"+message)
         return responses
+
     def run(self):
         print "Welcome to One Time Chat. Type 'help' for help."
 
@@ -158,6 +148,7 @@ class OTC_Client(object):
             print "Cursor:", self.nextref
             user_input = raw_input().split()
             if len(user_input) == 0:
+                # Default to receive messages.
                 response = self.get_messages(self.nextref)
                 messages = response[u'messages']
                 for message in messages:
@@ -183,8 +174,6 @@ class OTC_Client(object):
                     print "Error: Failed to send message."
             elif command == "id":
                 print "User ID:", self.user_id
-            elif command == "lookup":
-                raise NotImplementedError("need to implement username to uid lookup")
             elif command == "clear":
                 os.system("clear")
             elif command in ["quit", "q", "exit"]:
