@@ -22,9 +22,9 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
                                          decrypt_index,
                                          endIndex),
                        "decrypt_max":
-                       max(metadata["decrypt_max"], endIndex-1)
+                       max(metadata["decrypt_max"], endIndex)
                        if metadata["direction"] == -1 else
-                       min(metadata["decrypt_max"], endIndex+1)}
+                       min(metadata["decrypt_max"], endIndex)}
             metadata = update_metadata(metadata, updates)
             mfile.write(json.dumps(metadata))
 
@@ -69,26 +69,37 @@ def decrypt_index_used(sid, uid, decrypt_index):
     metadataFile = get_metadatafile_name(uid, sid)
     metadata = read_metadata(metadataFile)
 
-    # Of the form "1-10,10-15,15-22,"
+    # decrypt_log is of the form "1-10,10-15,15-22,"
+    # indexes_used stores ["1-10","10-15","15-22"]
     indexes_used = metadata["decrypt_log"].split(",")[:-1]
     print "indexes_used in decrypt_index_used is:"
     print indexes_used
-    return str(decrypt_index) in [s.split("-")[0] for s in indexes_used]
-
+    
+    # If decrypt_index is within the range of any of
+    #  the elements in the log, then the index has
+    #  been used before
+    d = metadata["direction"]
+    temp = [s.split("-") for s in indexes_used]
+    inclusive_ranges = [(int(r[0]), int(r[1]) + d) for r in temp]
+    if d == 1:
+        return any(map(lambda rt: rt[0] >= decrypt_index
+                       and decrypt_index >= rt[1], inclusive_ranges))
+    if d == -1:
+        return any(map(lambda rt: rt[0] <= decrypt_index
+                       and decrypt_index <= rt[1], inclusive_ranges))
+    
 # True if this decrypt index requested has skipped over
 #  a portion of the pad
 def decrypt_index_skipped(sid, uid, decrypt_index, history=-1):
     metadataFile = get_metadatafile_name(uid, sid)
     metadata = read_metadata(metadataFile)
     
-    history = history if history > 0 else 0
-    indexes_used = metadata["decrypt_log"].split(",")[-history:-1]
-    print "indexes_used[-history:] in skipped is:"
-    print indexes_used
-    if len(indexes_used) == 0:
-        return False
-    return not any(map(lambda s: s.split("-")[1] == str(decrypt_index),
-                       indexes_used))
+    decrypt_optimum = metadata["decrypt_max"]
+    d = metadata["direction"]
+    if d == 1:
+        return decrypt_index < decrypt_optimum
+    if d == -1:
+        return decrypt_index > decrypt_optimum
 
 # Returns UID of this device
 def whoami(override_true_id=None):
