@@ -37,9 +37,9 @@ def package(index, message, p_text, p_body):
     """
     # Assert parameter types.
     assert isinstance(index, int)
-    assert isinstance(message, basestring)
-    assert isinstance(p_text, basestring)
-    assert isinstance(p_body, basestring)
+    assert isinstance(message, str)
+    assert isinstance(p_text, str)
+    assert isinstance(p_body, str)
 
     # Assert various properties we know should be true.
     assert 0 <= index <= INDEX_MAX

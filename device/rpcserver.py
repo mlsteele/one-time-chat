@@ -22,6 +22,7 @@ def runrpc():
 
     try:
         result = method(*call["args"], **call["kwargs"])
+        print "ran rpc: ", call["method"]
         return jsonify({"return": result})
     except Exception as exc:
         traceback.print_exc()

@@ -2,33 +2,41 @@ import crypto
 import read
 import os
 import json
+import base64
 
 """
 All methods that are RPCs should go here.
 """
+
+# TODO add explicit rpc allow list.
 
 # Confirm controller handle.
 csc = None
 
 def package(src_uid, dst_uid, message):
     """ Encrypt a message from from_uid to to_uid.
-    Message is plaintext
+    Message is plaintext.
     Package it up with the index and MAC so the recipient can decode it.
     """
+    message = message.encode("utf-8")
     (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
     (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
     try:
         package = crypto.package(index, message, p_text, p_body)
+        # Base64 encode the package for transport.
+        package_b64 = base64.b64encode(package)
         return {
             "success": True,
-            "package": package
+            "package": package_b64,
         }
     except CryptoError:
         return {
                 "success": False,
         }
 
-def unpackage(src_uid, dst_uid, package):
+def unpackage(src_uid, dst_uid, package_b64):
+    # b64 decode the package for decryption.
+    package = base64.b64decode(package_b64)
     message_length = len(package) - crypto.INDEX_ENCODE_LENGTH - crpto.TAG_LENGTH 
     body_length = len(package) - crypto.INDEX_ENCODE_LENGTH
     p_text = read.read_decrypt_pad(dst_uid, message_length)
