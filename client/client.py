@@ -61,8 +61,12 @@ class OTC_Client(object):
         return res["package"]
 
     def send_secure(self, target, message_plaintext):
-        package = self.package(target, message_plaintext)
-        self.send_plaintext(target, package)
+        try:
+            package = self.package(target, message_plaintext)
+            self.send_plaintext(target, package)
+            return True
+        except rpcclient.RpcException:
+            return False
 
     def receive(self):
         raise NotImplementedError("TODO: write receive")
@@ -181,8 +185,11 @@ class OTC_Client(object):
             elif (command  == "send"):
                 recipient = user_input[1]
                 message = " ".join(user_input[2:])
-                self.send_secure(recipient, message)
-                print "Message sent!"
+                success = self.send_secure(recipient, message)
+                if success:
+                    print "Message sent."
+                else:
+                    print "Error: Failed to send message."
             elif command == "id":
                 print "User ID:", self.user_id
             elif command == "lookup":

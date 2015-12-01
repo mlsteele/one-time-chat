@@ -15,22 +15,21 @@ def package(src_uid, dst_uid, message):
     Message is plaintext
     Package it up with the index and MAC so the recipient can decode it.
     """
-    # TODO: actually encrypt.
-    
-    (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid,len(message))
-    (p_body, not_used) = read.read_encrypt_(src_uid, dst_uid,len(message)+crpyto.TAG_LENGTH)
-    package = crpyto.package(index, message, p_text, p_body)
+    (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
+    (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
+    package = crypto.package(index, message, p_text, p_body)
     return {
         "success": True,
-        "package": package # TODO encrypt instead please.
+        "package": package
     }
 
 def unpackage(src_uid, dst_uid, package):
-    message_length = len(package) - crypto.INDEX_MAX - crpto.TAG_LENGTH 
-    body_length = len(package) - crypto.INDEX_MAX
+    message_length = len(package) - crypto.INDEX_ENCODE_LENGTH - crpto.TAG_LENGTH 
+    body_length = len(package) - crypto.INDEX_ENCODE_LENGTH
     p_text = read.read_decrypt_pad(dst_uid, message_length)
     p_body = read.read_decrypt_pad(dst_uid, body_length)
     message = crypto.unpackage(package, p_text, p_body)
+
 def encrypt(recipient_uid, message):
     """ Encrypts a message using a one time pad  
     recipient_uid is the id of the recipient. This impacts what pad will be used to encrypt
@@ -39,8 +38,8 @@ def encrypt(recipient_uid, message):
     """
     ## I imagine the pad to be read_from_device depends on the recipient_uid, the index, and the length of the pad
     #TODO: index_used might buggy
-    (pad,index_used) = read_encrypt_pad(recipient_uid,len(message)) 
-    cipher_list = encrypt.encrypt(message,pad)
+    (pad,index_used) = read_encrypt_pad(recipient_uid, len(message)) 
+    cipher_list = encrypt.encrypt(message, pad)
     cipher_text = encrypt.pretty_print(cipher_list)
     return {
             "status":"ok",
