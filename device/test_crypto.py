@@ -13,9 +13,19 @@ class TestCrypto(unittest.TestCase):
         p_body = chr(0)*(len(message)+ crypto.TAG_LENGTH)
         package = crypto.package(index, message, p_text, p_body)
         # Should be index | message | Sha(index | message)
-        correctPackage = chr(0)+message+(crypto.sha(chr(0)+message))
+        correctPackage = 6*chr(0)+message+(crypto.sha(6*chr(0)+message))
         self.assertEqual(package, correctPackage)
-        
+    
+    def test_package_reflexive(self):
+        message = "Test that packaged and unpackaging returns the same message"
+        index = 0
+        p_text =  "otuhixnuheotuheouaoecgudoaeuteoahduao',.peaecd'983d uaoeuhu" #pseudo random typing
+        p_body = ",'cd.ucr,'.gud.,9'ud249 l3uf19842gfpd4gdu r9'7i3pkur84gciudr.g,fi r138uf927 i'elaui '/u.,'u,.uu 872 pp9237pi9247pduxanw;jk8"
+        self.assertEquals(len(p_body), len(p_text)+crypto.TAG_LENGTH)
+        package = crypto.package(index, message, p_text, p_body)
+        unpackage = crypto.unpackage(package, p_text, p_body)
+        self.assertEquals(unpackage, message)
+
     def test_codec_index_identity(self):
         """Test that encoding and decoding an index works."""
         # TODO write this test
