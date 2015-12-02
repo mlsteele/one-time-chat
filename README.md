@@ -2,6 +2,13 @@
 One time pad based communication.
 6.858 Final Project by Jake Barnwell, Andres Perez, Miles Steele
 
+# Security Warning
+
+This is a class project including homebaked crypto.
+We are not expert cryptographers.
+This project should NOT be treated as secure or vetted.
+It may well have bugs or design flaws.
+
 ## Device
 A user has a device which stores their one time pad and allows
 clients to encrypt and decrypt without giving them the whole pad.
