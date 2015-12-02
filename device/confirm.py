@@ -10,9 +10,12 @@ import time
 import inspect
 import colorsys
 
-import pygame
-from pygame.locals import *
-from evdev import InputDevice, list_devices
+try:
+    import pygame
+    from pygame.locals import *
+    from evdev import InputDevice, list_devices
+except ImportError:
+    print "Warning: Pygame and similar imports ignored."
 
 
 class ConfirmScreenController(object):
