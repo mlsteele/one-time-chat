@@ -17,12 +17,21 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
     metadataFile = get_metadatafile_name(uid, sid)
     metadata = read_metadata(metadataFile)
     assert decrypt_index >= 0 and decrypt_index < metadata["n_bytes"]
+    d = metadata["direction"]
+    if d == 1:
+        assert decrypt_index >= metadata["split_index"]
+    if d == -1:
+        assert decrypt_index < metadata["split_index"]
 
     storeFile = metadata["store_filename"]
     with open(storeFile, "rb") as store:
-        d = metadata["direction"]
         endIndex = decrypt_index - d * clen #exclusive
         assert endIndex >= 0 and endIndex < metadata["n_bytes"]
+        if d == 1:
+            assert endIndex >= metadata["split_index"]
+        if d == -1:
+            assert endIndex < metadata["split_index"]
+        
 
         print("Decrypt index skipped: {}\nDecrypt index used: {}\n".
               format(decrypt_index_skipped(sid, uid, decrypt_index),
@@ -64,14 +73,18 @@ def read_encrypt_pad(uid, rid, mlen):
     """
     metadataFile = get_metadatafile_name(uid, rid)
     metadata = read_metadata(metadataFile)
+    d = metadata["direction"]
 
     storeFile = metadata["store_filename"]
     with open(storeFile, "rb") as store:
         e = metadata["encrypt_index"]
-        d = metadata["direction"]
         endIndex = e + d * mlen
         assert endIndex >= 0 and endIndex < metadata["n_bytes"]
-
+        if d == 1:
+            assert endIndex < metadata["split_index"]
+        if d == -1:
+            assert endIndex >= metadata["split_index"]
+        
         with open(metadataFile, "w") as mfile:
             updates = {"encrypt_index": e+d*mlen}
             metadata = update_metadata(metadata, updates)
