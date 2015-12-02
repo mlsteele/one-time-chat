@@ -80,7 +80,8 @@ def read_encrypt_pad(uid, rid, mlen):
             leftInclusive = e if d == 1 else endIndex+1
             rightInclusive = endIndex-1 if d == 1 else e
             store.seek(leftInclusive)
-            return store.read(rightInclusive - leftInclusive + 1)[::d]
+            pad_data = store.read(rightInclusive - leftInclusive + 1)[::d]
+            return (pad_data, e)
 
 # True if the decrypt index requested has been used before
 #  to decrypt 
