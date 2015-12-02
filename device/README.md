@@ -1,7 +1,7 @@
 # Device Software
 
 Software to run on the pad device.
-The pad device is a separate device (raspberry pi) from the one running the client software.
+The pad device is a separate device (e.g. raspberry pi) from the one running the client software.
 The device software can also be run on the same system as the client for convenience.
 
 # Network Setup
