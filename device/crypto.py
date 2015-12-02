@@ -8,8 +8,6 @@ INDEX_MAX = (2**(INDEX_ENCODE_LENGTH * 8)) - 1
 # Length of tag in bytes.
 TAG_LENGTH = 64
 
-# TODO(miles): make asserts raise cryptoerrors.
-
 class CryptoError(Exception):
     pass
 
@@ -37,26 +35,26 @@ def package(index, message, p_text, p_body):
         The secured message, ready for sending. (string)
     """
     # Assert parameter types.
-    assert isinstance(index, int)
-    assert isinstance(message, str)
-    assert isinstance(p_text, str)
-    assert isinstance(p_body, str)
+    cassert(isinstance(index, int))
+    cassert(isinstance(message, str))
+    cassert(isinstance(p_text, str))
+    cassert(isinstance(p_body, str))
 
     # Assert various properties we know should be true.
-    assert 0 <= index <= INDEX_MAX
-    assert len(p_text) == len(message)
-    assert len(p_body) == len(message) + TAG_LENGTH
+    cassert(0 <= index <= INDEX_MAX)
+    cassert(len(p_text) == len(message))
+    cassert(len(p_body) == len(message) + TAG_LENGTH)
 
     # Encrypt the plaintext.
     ciphertext = encrypt(message, p_text)
 
     # Encode the index.
     i_enc = encode_index(index)
-    assert len(i_enc) == INDEX_ENCODE_LENGTH
+    cassert(len(i_enc) == INDEX_ENCODE_LENGTH)
 
     # Create the integrity tag.
     tag = sha(i_enc + ciphertext)
-    assert len(tag) == TAG_LENGTH
+    cassert(len(tag) == TAG_LENGTH)
 
     body = ciphertext + tag
 
@@ -94,7 +92,7 @@ def pre_unpackage(package):
         CryptoError on failure.
     """
     message_length = len(package) - INDEX_ENCODE_LENGTH - TAG_LENGTH 
-    assert message_length > 0
+    cassert(message_length > 0)
     body_length = message_length + TAG_LENGTH
     p_text_index = decode_index(package[:INDEX_ENCODE_LENGTH])
     p_body_index = p_text_index + message_length

@@ -24,6 +24,8 @@ Runs on a server and relays messages between clients.
 To run 2 clients on a single computer run the following commands.
 
 ```
+    # Create a pad for use between Alice and Bob.
+    python device/generate.py -m 5 alice bob
     # Start the message relay server.
     python server/server.py 9050
     # Start Alice's device.

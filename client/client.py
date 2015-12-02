@@ -7,7 +7,7 @@ Usage:
 Options:
   server_address    Address of the message relay server.
   device_address    Address of the pad device rpc server.
-  user_name         Your username.
+  user_id           Your username.
 """
 from docopt import docopt
 import requests
@@ -15,9 +15,6 @@ from requests.exceptions import RequestException
 import os
 import sys
 import rpcclient
-
-MAX_INDEX_LENGTH = 32 # TODO: agree on a valid number
-TAG_LENGTH=64
 
 class ClientException(Exception):
     pass
@@ -29,7 +26,6 @@ class OTC_Client(object):
     def __init__(self, server_address, device_address, user_id):
         self.server_address = normalize_address(server_address)
         self.device_address = normalize_address(device_address)
-        # TODO: remove for testing self.user_id = self.get_user_id()
         self.user_id = user_id
 
         print "Relay server address:", self.server_address
@@ -41,7 +37,6 @@ class OTC_Client(object):
         self.friends = {}
         self.rpc_client = rpcclient.RpcClient(self.device_address)
 
-    #TODO: mapping of username to uid
     def send_plaintext(self, target, message):
         payload = {
             "recipient_uid": target,
@@ -66,11 +61,9 @@ class OTC_Client(object):
             package = self.package(target, message_plaintext)
             self.send_plaintext(target, package)
             return True
-        except rpcclient.RpcException:
+        except rpcclient.RpcException as ex:
+            print ex
             return False
-
-    def receive(self):
-        raise NotImplementedError("TODO: write receive")
 
     def connect(self):
         """Check that the message relay server is alive."""
@@ -79,13 +72,6 @@ class OTC_Client(object):
             res.raise_for_status()
         except RequestException as ex:
             raise ClientException("Could not connect to server.", ex)
-
-    def get_user_id(self):
-        print "TODO: clients need to be able to fetch user id from their device"
-        return raw_input("enter a fake user id: ")
-
-    def get_username_id(self,username):
-        return self.friends[username]
 
     def get_next_ref(self):
         """Get the next ref for a recipient.
