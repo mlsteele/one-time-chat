@@ -3,7 +3,7 @@ from crypto import CryptoError
 import unittest
 
 class TestCrypto(unittest.TestCase):
-    def test_xor(sel):
+    def test_xor(self):
         # TODO write
         pass
 
