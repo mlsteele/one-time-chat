@@ -61,7 +61,8 @@ class OTC_Client(object):
             package = self.package(target, message_plaintext)
             self.send_plaintext(target, package)
             return True
-        except rpcclient.RpcException:
+        except rpcclient.RpcException as ex:
+            print ex
             return False
 
     def connect(self):
