@@ -52,8 +52,9 @@ def make_random_blob(f0, f1, uid0, uid1, n_bytes, rservice):
     n_Kbytes = n_bytes / KiB
     n_leftoverbytes = n_bytes - (n_Kbytes * KiB)
 
-    # Make sure the HRNG is running
-    os.system("/etc/init.d/rng-tools start")
+    # Make sure the HRNG is running for service random
+    if rservice == "random":
+        os.system("/etc/init.d/rng-tools start")
 
     log()
     log("Generating {} random bytes".format(n_bytes) +

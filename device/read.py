@@ -20,9 +20,8 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
 
     storeFile = metadata["store_filename"]
     with open(storeFile, "rb") as store:
-        pad = store.read()
         d = metadata["direction"]
-        endIndex = decrypt_index - d * clen
+        endIndex = decrypt_index - d * clen #exclusive
         assert endIndex >= 0 and endIndex < metadata["n_bytes"]
 
         print("Decrypt index skipped: {}\nDecrypt index used: {}\n".
@@ -39,8 +38,11 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
                        min(metadata["decrypt_max"], endIndex)}
             metadata = update_metadata(metadata, updates)
             mfile.write(json.dumps(metadata))
-
-        return pad[decrypt_index:endIndex:-d]
+        
+        leftInclusive = decrypt_index if d == -1 else endIndex+1
+        rightInclusive = endIndex-1 if d == -1 else decrypt_index
+        store.seek(leftInclusive)
+        return store.read(rightInclusive - leftInclusive + 1)[::-d]
 
 # Returns (pad, index) 
 def read_encrypt_pad(uid, rid, mlen):
@@ -65,7 +67,6 @@ def read_encrypt_pad(uid, rid, mlen):
 
     storeFile = metadata["store_filename"]
     with open(storeFile, "rb") as store:
-        pad = store.read()
         e = metadata["encrypt_index"]
         d = metadata["direction"]
         endIndex = e + d * mlen
@@ -75,7 +76,11 @@ def read_encrypt_pad(uid, rid, mlen):
             updates = {"encrypt_index": e+d*mlen}
             metadata = update_metadata(metadata, updates)
             mfile.write(json.dumps(metadata))
-        return (pad[e:endIndex:d], e)
+
+            leftInclusive = e if d == 1 else endIndex+1
+            rightInclusive = endIndex-1 if d == 1 else e
+            store.seek(leftInclusive)
+            return store.read(rightInclusive - leftInclusive + 1)[::d]
 
 # True if the decrypt index requested has been used before
 #  to decrypt 
