@@ -160,7 +160,9 @@ def normalize_address(address):
     except ValueError:
         pass
     # Add http protocol.
-    if not address.startswith("http://"):
+    if address.startswith("http://"):
+        return address
+    else:
         return "http://{}".format(address)
 
 
