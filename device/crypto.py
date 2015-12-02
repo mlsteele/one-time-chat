@@ -35,7 +35,8 @@ def package(index, message, p_text, p_body):
         The secured message, ready for sending. (string)
     """
     # Assert parameter types.
-    cassert(isinstance(index, int))
+    ##TODO: better assert check error messages
+    cassert(isinstance(index, int), "Index not int")
     cassert(isinstance(message, str))
     cassert(isinstance(p_text, str))
     cassert(isinstance(p_body, str))
@@ -121,8 +122,8 @@ def decode_index(index_str):
     """
     Decode an index encoded as a fixed length string.
     """
-    cassert(isinstance(index_str, str))
-    cassert(len(index_str) == INDEX_ENCODE_LENGTH)
+    cassert(isinstance(index_str, str), "Index not instance of String")
+    cassert(len(index_str) == INDEX_ENCODE_LENGTH, "Not None")
     eight_pack = index_str + "\x00" + "\x00"
     try:
         return struct.unpack("<Q", eight_pack)[0]
