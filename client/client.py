@@ -44,7 +44,7 @@ class OTC_Client(object):
             "contents": message,
         }
         try:
-            res = requests.post(self.server_address + "/send", data=payload)
+            res = requests.post(self.server_address + "/send", data=payload, timeout=1)
             res.raise_for_status()
         except RequestException as ex:
             raise ClientException("Could not connect to server.", ex)
@@ -68,7 +68,7 @@ class OTC_Client(object):
     def connect(self):
         """Check that the message relay server is alive."""
         try:
-            res = requests.get(self.server_address + "/check")
+            res = requests.get(self.server_address + "/check", timeout=1)
             res.raise_for_status()
         except RequestException as ex:
             raise ClientException("Could not connect to server.", ex)
