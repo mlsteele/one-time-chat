@@ -159,7 +159,7 @@ def pre_unpackage(package, verbose=False):
         CryptoError on failure.
     """
     message_length = len(package) - INDEX_ENCODE_LENGTH - TAG_LENGTH 
-    cassert(message_length > 0)
+    cassert(message_length >= 0)
     p_text_index = decode_index(package[:INDEX_ENCODE_LENGTH])
     res = {
         "message_length": message_length,
