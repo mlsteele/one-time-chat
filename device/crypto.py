@@ -153,26 +153,17 @@ def pre_unpackage(package, verbose=False):
     Returns:
     {
         message_length: Expected length of the underlying message.
-        body_length: Expected length of the body section.
         p_text_index: Index of the text pad bytes.
-        p_body_index: Index of the body pad bytes.
-        p_tag_key_index: Index of the tag key bytes.
     }
     Raises:
         CryptoError on failure.
     """
     message_length = len(package) - INDEX_ENCODE_LENGTH - TAG_LENGTH 
     cassert(message_length > 0)
-    body_length = message_length + TAG_LENGTH
     p_text_index = decode_index(package[:INDEX_ENCODE_LENGTH])
-    p_body_index = p_text_index + message_length
-    p_tag_key_index = p_body_index + body_length
     res = {
         "message_length": message_length,
-        "body_length": body_length,
         "p_text_index": p_text_index,
-        "p_body_index": p_body_index,
-        "p_tag_key_index": p_tag_key_index,
     }
     if verbose:
         print res

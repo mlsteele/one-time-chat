@@ -118,7 +118,7 @@ def decrypt_index_used(sid, uid, decrypt_index):
     if d == -1:
         return any(map(lambda rt: rt[0] <= decrypt_index
                        and decrypt_index <= rt[1], inclusive_ranges))
-    
+
 # True if this decrypt index requested has skipped over
 #  a portion of the pad
 def decrypt_index_skipped(sid, uid, decrypt_index, history=-1):
@@ -131,6 +131,27 @@ def decrypt_index_skipped(sid, uid, decrypt_index, history=-1):
         return decrypt_index < decrypt_optimum
     if d == -1:
         return decrypt_index > decrypt_optimum
+
+def decrypt_index_shift(sid, rid, index, size):
+    """Shift along the pad by size."""
+    metadataFile = get_metadatafile_name(rid, sid)
+    metadata = read_metadata(metadataFile)
+    assert index >= 0 and index < metadata["n_bytes"]
+    d = metadata["direction"]
+
+    if d == 1:
+        assert index >= metadata["split_index"]
+    if d == -1:
+        assert index < metadata["split_index"]
+
+    next_index = index - d * size
+
+    if d == 1:
+        assert next_index >= metadata["split_index"]
+    if d == -1:
+        assert next_index < metadata["split_index"]
+
+    return next_index
 
 # Returns UID of this device
 def whoami(override_true_id=None):
