@@ -11,19 +11,22 @@ class TestCrypto(unittest.TestCase):
         message = "Test that pad being 0 is identity"
         p_text = chr(0)*len(message)
         p_body = chr(0)*(len(message)+ crypto.TAG_LENGTH)
-        package = crypto.package(index, message, p_text, p_body)
-        # Should be index | message | Sha(index | message)
-        correctPackage = 6*chr(0)+message+(crypto.sha(6*chr(0)+message))
+        p_tag_key = chr(0) * crypto.TAG_KEY_LENGTH
+        package = crypto.package(index, message, p_text, p_body, p_tag_key)
+        # Should be index | message | HMAC(key, index | message)
+        correctPackage = 6*chr(0)+message+(crypto.hmac_sha256(p_tag_key, 6*chr(0)+message))
         self.assertEqual(package, correctPackage)
     
     def test_package_reflexive(self):
         message = "Test that packaged and unpackaging returns the same message"
         index = 0
         p_text =  "otuhixnuheotuheouaoecgudoaeuteoahduao',.peaecd'983d uaoeuhu" #pseudo random typing
-        p_body = ",'cd.ucr,'.gud.,9'ud249 l3uf19842gfpd4gdu r9'7i3pkur84gciudr.g,fi r138uf927 i'elaui '/u.,'u,.uu 872 pp9237pi9247pduxanw;jk8"
+        p_body = ",'cd.ucr,'.gud.,9'ud249 l3uf19842gfpd4gdu r9'7i3pkur84gciudr.g,fi r138uf927 i'e7pduxanw;jk8"
+        p_tag_key = "N\xbb\xcf\xb0jT\x81\x12X2.\xe5zMi\xee"
+
         self.assertEquals(len(p_body), len(p_text)+crypto.TAG_LENGTH)
-        package = crypto.package(index, message, p_text, p_body)
-        unpackage = crypto.unpackage(package, p_text, p_body)
+        package = crypto.package(index, message, p_text, p_body, p_tag_key)
+        unpackage = crypto.unpackage(package, p_text, p_body, p_tag_key)
         self.assertEquals(unpackage, message)
 
     def test_codec_index_identity(self):

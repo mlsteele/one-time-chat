@@ -1,35 +1,39 @@
 import hashlib
 import struct
+import hmac
 
 # Length of encoded index in bytes.
 INDEX_ENCODE_LENGTH = 6
 # Maximum supported pad index.
 INDEX_MAX = (2**(INDEX_ENCODE_LENGTH * 8)) - 1
 # Length of tag in bytes.
-TAG_LENGTH = 64
+TAG_LENGTH = 32
+# Length of the HMAC key in bytes.
+TAG_KEY_LENGTH = 16
 
 class CryptoError(Exception):
     pass
 
 
-def package(index, message, p_text, p_body):
+def package(index, message, p_text, p_body, p_tag_key):
     """
     Secure a message with encryption and integrity protection.
 
     package := i || (p_body XOR body)
     body := ciphertext || tag
-    tag := SHA(i || ciphertext)
+    tag := HMAC(p_tag_key, i || ciphertext)
     ciphertext := p_text XOR message
 
     - '||' means concatenation.
     - i is a fixed-length encoding of the pad index.
-    - SHA refers to a SHA256 hash.
+    - HMAC is a sha256-based HMAC.
 
     Args:
         index: Index into the pad used. (int)
         message: Plaintext message to encrypt. (string)
-        p_cipher: Bytes to use for XORing with message. (string)
-        p_body: Bytes to use for XORing with message || tag. (string)
+        p_text: Pad bytes to use for hiding the message. (string)
+        p_body: Pad bytes to use for hiding the message and tag. (string)
+        p_tag_key: Pad bytes to use as HMAC key.
 
     Returns:
         The secured message, ready for sending. (string)
@@ -40,11 +44,13 @@ def package(index, message, p_text, p_body):
     cassert(isinstance(message, str))
     cassert(isinstance(p_text, str))
     cassert(isinstance(p_body, str))
+    cassert(isinstance(p_tag_key, str))
 
-    # Assert various properties we know should be true.
+    # Assert various parameter properties.
     cassert(0 <= index <= INDEX_MAX)
     cassert(len(p_text) == len(message))
     cassert(len(p_body) == len(message) + TAG_LENGTH)
+    cassert(len(p_tag_key) == TAG_KEY_LENGTH)
 
     # Encrypt the plaintext.
     ciphertext = encrypt(message, p_text)
@@ -54,29 +60,52 @@ def package(index, message, p_text, p_body):
     cassert(len(i_enc) == INDEX_ENCODE_LENGTH)
 
     # Create the integrity tag.
-    tag = sha(i_enc + ciphertext)
+    tag = hmac_sha256(key=p_tag_key, message=i_enc + ciphertext)
     cassert(len(tag) == TAG_LENGTH)
 
     body = ciphertext + tag
 
-    return i_enc + encrypt(body, p_body)
+    full_package = i_enc + encrypt(body, p_body)
+
+    # Size of result.
+    cassert(len(full_package) == len(message) + INDEX_ENCODE_LENGTH + TAG_LENGTH)
+    # Amount of total pad used.
+    cassert(len(p_text) + len(p_body) + len(p_tag_key) == 2*len(message) + TAG_LENGTH + TAG_KEY_LENGTH)
+
+    return full_package
 
 
-def unpackage(package, p_text, p_body):
-    """ Extract the message and verify it's integrity """ 
-    
-    # extract package contents
+def unpackage(package, p_text, p_body, p_tag_key):
+    """Extract the message and verify its integrity.""" 
+    # Assert parameter types.
+    cassert(isinstance(package, str))
+    cassert(isinstance(p_text, str))
+    cassert(isinstance(p_body, str))
+    cassert(isinstance(p_tag_key, str))
+
+    # Assert parameter properties
+    cassert(len(p_text) == len(package) - INDEX_ENCODE_LENGTH - TAG_LENGTH)
+    cassert(len(p_body) == len(package) - INDEX_ENCODE_LENGTH)
+    cassert(len(p_tag_key) == TAG_KEY_LENGTH)
+
+    # Extract package contents
     index = package[:INDEX_ENCODE_LENGTH]
     encrypted_body = package[INDEX_ENCODE_LENGTH:]
-    plain_body = decrypt(encrypted_body,p_body)
-    ## the starting index of the body pad: index + length of cipher text
-    ## length of cipher text = length of body - length of tag
-    tag = plain_body[-1*TAG_LENGTH:]
-    ciphertext = plain_body[:-1*TAG_LENGTH]
 
-    # integrity check
-    if sha(index + ciphertext) == tag:
-        message = decrypt(ciphertext,p_text)
+    # Decrypt body.
+    plain_body = decrypt(encrypted_body, p_body)
+
+    # The starting index of the body pad: index + length of cipher text
+    # Length of cipher text = length of body - length of tag
+    tag = plain_body[-TAG_LENGTH:]
+    ciphertext = plain_body[:-TAG_LENGTH]
+
+    # Compute the expected tag.
+    expected_tag = hmac_sha256(key=p_tag_key, message=index + ciphertext)
+
+    # Check the tag.
+    if hmac.compare_digest(tag, expected_tag):
+        message = decrypt(ciphertext, p_text)
         return message
     else:
         raise CryptoError("Integrity Error") 
@@ -86,8 +115,11 @@ def pre_unpackage(package):
 
     Returns:
     {
-        p_text_index
-        p_body_index
+        message_length: Expected length of the underlying message.
+        body_length: Expected length of the body section.
+        p_text_index: Index of the text pad bytes.
+        p_body_index: Index of the body pad bytes.
+        p_tag_key_index: Index of the tag key bytes.
     }
     Raises:
         CryptoError on failure.
@@ -97,11 +129,13 @@ def pre_unpackage(package):
     body_length = message_length + TAG_LENGTH
     p_text_index = decode_index(package[:INDEX_ENCODE_LENGTH])
     p_body_index = p_text_index + message_length
+    p_tag_key_index = p_body_index + body_length
     return {
         "message_length": message_length,
         "body_length": body_length,
         "p_text_index": p_text_index,
         "p_body_index": p_body_index,
+        "p_tag_key_index": p_tag_key_index,
     }
 
 def encode_index(index_num):
@@ -147,8 +181,11 @@ def decrypt(cipher, pad):
     return "".join(map(xorHelper, zip(cipher, pad)))
 
 
-def sha(stuff):
-    return hashlib.sha512(stuff).digest()
+def hmac_sha256(key, message):
+    cassert(isinstance(key, str))
+    cassert(isinstance(message, str))
+    return hmac.new(key, message, digestmod=hashlib.sha256).digest()
+
 
 def cassert(condition, error=None):
     """Assert and throw a CryptoError if it fails."""

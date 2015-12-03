@@ -21,7 +21,7 @@ ALLOW_LIST = [
 csc = None
 
 def package(src_uid, dst_uid, message):
-    """ Encrypt a message from from_uid to to_uid.
+    """Encrypt a message from from_uid to to_uid.
     Message is plaintext.
     Package it up with the index and MAC so the recipient can decode it.
     """
@@ -29,12 +29,13 @@ def package(src_uid, dst_uid, message):
     message = message.encode("utf-8")
     (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
     (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
+    (p_tag_key, _)      = read.read_encrypt_pad(src_uid, dst_uid, crypto.TAG_KEY_LENGTH)
 
     print "package    index:{}    message:{}    p_body:{}".format(
         index, base64.b64encode(message[:4]), base64.b64encode(p_body[:4]))
 
     try:
-        package = crypto.package(index, message, p_text, p_body)
+        package = crypto.package(index, message, p_text, p_body, p_tag_key)
         # Base64 encode the package for transport.
         package_b64 = base64.b64encode(package)
         return {
@@ -67,17 +68,20 @@ def unpackage(src_uid, dst_uid, package_b64):
     body_length = pre["body_length"]
     p_text_index = pre["p_text_index"]
     p_body_index = pre["p_body_index"]
+    p_tag_key_index = pre["p_tag_key_index"]
 
     p_text = read.read_decrypt_pad(src_uid, dst_uid,
                                    p_text_index, message_length)
     p_body = read.read_decrypt_pad(src_uid, dst_uid,
                                    p_body_index, body_length)
+    p_tag_key = read.read_decrypt_pad(src_uid, dst_uid,
+                                      p_tag_key_index, crypto.TAG_KEY_LENGTH)
 
     print "unpackage    index:{}    package:{}    p_body:{}".format(
         p_text_index, base64.b64encode(package[:4]), base64.b64encode(p_body[:4]))
 
     try:
-        message = crypto.unpackage(package, p_text, p_body)  
+        message = crypto.unpackage(package, p_text, p_body, p_tag_key)
         return {
             "success" : True,
             "message" : message,
