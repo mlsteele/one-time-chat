@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 OTC Pad Device.
 Entry point for device code.
