@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 """
 Usage:
- storetool.py UID1 UID2
+ storetool.py GID USERS...
               (-b NBYTES | -k NKBYTES| -m NMBYTES)
               [-v | --verbose] [-s SVC]
  storetool.py (-h | --help)
 
 Arguments:
- UID1   The User ID of the first person (e.g. alice)
- UID2   The User ID of the second person (e.g. bob)
+ GID    The ID (name) of the group, e.g. scrublords
+ USERS  The IDs (names) of the group's constituent members
 
 Options:
 -b NBYTES             Number of bytes to generate
@@ -36,7 +36,7 @@ DEBUG = 2
 # Benchmark: 106 seconds for 1 MiB. That's 
 #  9.66 KiB / sec. With random.
 # urandom is <1 sec per MiB.
-def make_random_blob(f0, f1, uid0, uid1, n_bytes, rservice):
+def make_random_blob(fs, uids, gid, n_bytes, rservice):
     """Make a random store blob. Uses hardware-RNG
        along with /dev/random so that there is high
        entropy. Unless the user specifies urandom in
@@ -44,11 +44,38 @@ def make_random_blob(f0, f1, uid0, uid1, n_bytes, rservice):
        random.
 
     Args:
-       f0, f1: The file objects for the two users
-       uid0, uid1: The ids of the two users
+       fs: array of file descriptors for each of the
+           group's members
+       uids: array of user IDs for each of the group's
+           users
        n_bytes: Size in bytes of the target
        rservice: random or urandom
     """
+    
+    # Makes one pad. Called later on.
+    def make_one_pad(uid, f):
+        # Will store # of bytes generated
+        n = 0
+        while(True):
+            with open("/dev/" + rservice, "rb") as rand:
+                nbytes2write = KiB if n_bytes - n >= KiB else n_bytes - n
+                randobytes = rand.read(nbytes2write)
+                f.write(randobytes)
+                n += nbytes2write
+                log("Wrote kilobyte chunk {}/{}"
+                    .format(n/KiB,(n_bytes+KiB-1)/KiB), 2, n%KiB==0)
+                log("Wrote final {} bytes"
+                    .format(nbytes2write), 2, n%KiB!=0)
+                log("Wrote megabyte chunk {}/{}"
+                    .format(n/MiB,(n_bytes+MiB-1)/MiB), 0, n%MiB==0)
+                if n >= n_bytes:
+                    break
+
+    assert len(fs) == len(uids)
+    if len(fs) < 2:
+        raise ValueError("You need at least three people for a group!")
+    elif len(fs) == 2:
+        raise ValueError("For 2 people, use generate.py instead.")
 
     n_Kbytes = n_bytes / KiB
     n_leftoverbytes = n_bytes - (n_Kbytes * KiB)
@@ -58,35 +85,19 @@ def make_random_blob(f0, f1, uid0, uid1, n_bytes, rservice):
         os.system("/etc/init.d/rng-tools start")
 
     log()
-    log("Generating {} random bytes".format(n_bytes) +
-        " with OS service '{}'".format(rservice), 0)
-    log("Target files: {} and {}".format(f0.name, f1.name))
+    log("Generating {} random bytes with OS service '{}'"
+        .format(n_bytes,rservice), 0)
+    log("The pad will be generated for group '{}'. Targets:"
+        .format(gid), 0)
+    for i in range(len(fs)):
+        log("\tuser: {}, filename: {}"
+            .format(uids[i], fs[i].name), 0)
     log()
 
-    # Will store # of bytes generated
-    n = 0
     # Time and execute random generation
     t1 = time.time()
-    while(True):
-        with open("/dev/" + rservice, "rb") as rand:
-            # So there's usually around 3000 bits of entropy
-            #  available (4096 at most). That's 512 bytes.
-            #  I don't know why but 1024 bytes at a time seems
-            #  to work the best.
-            nbytes2write = KiB if n_bytes - n >= KiB else n_bytes - n
-            randobytes = rand.read(nbytes2write)
-            f0.write(randobytes)
-            f1.write(randobytes)
-            n += nbytes2write
-            log("Wrote kilobyte chunk {}/{}"
-                .format(n/KiB,(n_bytes+KiB-1)/KiB), 2, n%KiB==0)
-            log("Wrote final {} bytes"
-                .format(nbytes2write), 2, n%KiB!=0)
-            log("Wrote megabyte chunk {}/{}"
-                .format(n/MiB,(n_bytes+MiB-1)/MiB), 0, n%MiB==0)
-            if n >= n_bytes:
-                break
-
+    for i in range(len(uids)):
+        make_one_pad(uids[i], fs[i])
     t2 = time.time()
 
     log()
@@ -96,10 +107,14 @@ def make_random_blob(f0, f1, uid0, uid1, n_bytes, rservice):
     log(" - time elapsed: {} seconds".format(t2 - t1))
     log(" - throughput: {} KiB/s".format((1.0*n_bytes/KiB) / (t2 - t1)))
     log()
-    log("{} random bytes have been written to {} and {}"
-        .format(n_bytes, f0.name, f1.name))
+    log("On behalf of the group '{}', {} random bytes have been"
+        .format(gid, n_bytes)
+        + " written to the following files:")
+    for f in fs:
+        log("\t{}".format(f.name))
 
-    make_metadata(uid0, uid1, n_bytes, rservice)
+#    make_metadata(uid0, uid1, n_bytes, rservice)
+
 
 def make_metadata(uid0, uid1, n_bytes, rservice):
     def make_data(uid, rid, direction):
@@ -149,9 +164,9 @@ def log(msg=-1, d=0, condition=True):
 
 if __name__ == "__main__":
     args = docopt(__doc__)
-    
-    uid0 = args["UID1"]
-    uid1 = args["UID2"]
+
+    gid = args["GID"]
+    uids = args["USERS"]
     rservice = args["--service"]
     verbose = args["--verbose"]
     
@@ -176,8 +191,9 @@ if __name__ == "__main__":
     if rservice not in ["random","urandom"]:
         exit("'{}' is not a valid service. ".format(rservice) +
              "Service must be one of {random,urandom}")
-    filepath1 = get_storefile_name(uid0, uid1)
-    filepath2 = get_storefile_name(uid1, uid0)
+
+    fpaths = [get_gstorefile_name(uids[i],gid) for i in range(len(uids))]
     DEBUG = 2 if verbose else 0
-    with open(filepath1, "wb") as f1, open(filepath2, 'wb') as f2:
-        make_random_blob(f1, f2, uid0, uid1, n_bytes, rservice)
+    fs = [open(fpath, "wb") for fpath in fpaths]
+    make_random_blob(fs, uids, gid, n_bytes, rservice)
+    map(lambda f: f.close(), fs)

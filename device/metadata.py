@@ -2,12 +2,19 @@ import json
 
 METADATA_STEM = ".random.metadata"
 STOREFILE_STEM = ".random.store"
+GROUP_STEM = ".g"
 
 def get_storefile_name(uid, rid):
     return "{}.{}{}".format(uid, rid, STOREFILE_STEM)
 
 def get_metadatafile_name(uid, rid):
     return "{}.{}{}".format(uid, rid, METADATA_STEM)
+
+def get_gstorefile_name(uid, gid):
+    return "{}.{}{}{}".format(uid, gid, GROUP_STEM, STOREFILE_STEM)
+
+def get_gmetadatafile_name(uid, gid):
+    return "{}.{}{}{}".format(uid, gid, GROUP_STEM, METADATA_STEM)
 
 def read_metadata(filename):
     with open(filename, "r") as metadata:
