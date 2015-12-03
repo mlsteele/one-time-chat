@@ -10,7 +10,8 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
         decrypt_index: The index to start reading.
         clen: Amount of pad to retrieve in BYTES.
     Returns:
-        Returns pad data as a string.
+        Returns (pad, ind) where pad is a string and ind
+         is the next decryption index to decrypt from.
     Throws:
         AssertionError if any index goes out of bounds
     """
@@ -51,7 +52,9 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
         leftInclusive = decrypt_index if d == -1 else endIndex+1
         rightInclusive = endIndex-1 if d == -1 else decrypt_index
         store.seek(leftInclusive)
-        return store.read(rightInclusive - leftInclusive + 1)[::-d]
+        pad_out = store.read(rightInclusive - leftInclusive + 1)[::-d]
+        next_decrypt_index = endIndex - d
+        return (pad_out, next_decrypt_index)
 
 # Returns (pad, index) 
 def read_encrypt_pad(uid, rid, mlen):
@@ -131,27 +134,6 @@ def decrypt_index_skipped(sid, uid, decrypt_index, history=-1):
         return decrypt_index < decrypt_optimum
     if d == -1:
         return decrypt_index > decrypt_optimum
-
-def decrypt_index_shift(sid, rid, index, size):
-    """Shift along the pad by size."""
-    metadataFile = get_metadatafile_name(rid, sid)
-    metadata = read_metadata(metadataFile)
-    assert index >= 0 and index < metadata["n_bytes"]
-    d = metadata["direction"]
-
-    if d == 1:
-        assert index >= metadata["split_index"]
-    if d == -1:
-        assert index < metadata["split_index"]
-
-    next_index = index - d * size
-
-    if d == 1:
-        assert next_index >= metadata["split_index"]
-    if d == -1:
-        assert next_index < metadata["split_index"]
-
-    return next_index
 
 # Returns UID of this device
 def whoami(override_true_id=None):
