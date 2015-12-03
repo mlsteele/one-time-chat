@@ -31,11 +31,8 @@ def package(src_uid, dst_uid, message):
     (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
     (p_tag_key, _)      = read.read_encrypt_pad(src_uid, dst_uid, crypto.TAG_KEY_LENGTH)
 
-    print "package    index:{}    message:{}    p_body:{}".format(
-        index, base64.b64encode(message[:4]), base64.b64encode(p_body[:4]))
-
     try:
-        package = crypto.package(index, message, p_text, p_body, p_tag_key)
+        package = crypto.package(index, message, p_text, p_body, p_tag_key, verbose=True)
         # Base64 encode the package for transport.
         package_b64 = base64.b64encode(package)
         return {
@@ -56,7 +53,7 @@ def unpackage(src_uid, dst_uid, package_b64):
     package = base64.b64decode(package_b64)
 
     try:
-        pre = crypto.pre_unpackage(package)
+        pre = crypto.pre_unpackage(package, verbose=True)
     except crypto.CryptoError:
         traceback.print_exc()
         return {
@@ -77,11 +74,8 @@ def unpackage(src_uid, dst_uid, package_b64):
     p_tag_key = read.read_decrypt_pad(src_uid, dst_uid,
                                       p_tag_key_index, crypto.TAG_KEY_LENGTH)
 
-    print "unpackage    index:{}    package:{}    p_body:{}".format(
-        p_text_index, base64.b64encode(package[:4]), base64.b64encode(p_body[:4]))
-
     try:
-        message = crypto.unpackage(package, p_text, p_body, p_tag_key)
+        message = crypto.unpackage(package, p_text, p_body, p_tag_key, verbose=True)
         return {
             "success" : True,
             "message" : message,

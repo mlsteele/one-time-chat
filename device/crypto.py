@@ -1,6 +1,7 @@
 import hashlib
 import struct
 import hmac
+import base64
 
 # Length of encoded index in bytes.
 INDEX_ENCODE_LENGTH = 6
@@ -15,7 +16,7 @@ class CryptoError(Exception):
     pass
 
 
-def package(index, message, p_text, p_body, p_tag_key):
+def package(index, message, p_text, p_body, p_tag_key, verbose=False):
     """
     Secure a message with encryption and integrity protection.
 
@@ -33,7 +34,8 @@ def package(index, message, p_text, p_body, p_tag_key):
         message: Plaintext message to encrypt. (string)
         p_text: Pad bytes to use for hiding the message. (string)
         p_body: Pad bytes to use for hiding the message and tag. (string)
-        p_tag_key: Pad bytes to use as HMAC key.
+        p_tag_key: Pad bytes to use as HMAC key. (string)
+        verbose: Whether to print parts to the console. (boolean)
 
     Returns:
         The secured message, ready for sending. (string)
@@ -72,11 +74,35 @@ def package(index, message, p_text, p_body, p_tag_key):
     # Amount of total pad used.
     cassert(len(p_text) + len(p_body) + len(p_tag_key) == 2*len(message) + TAG_LENGTH + TAG_KEY_LENGTH)
 
+    if verbose:
+        print "package verbose:"
+        print "  index", index
+        print "  index_encoded", b64(i_enc)
+        print "  p_text", b64(p_text)
+        print "  p_body", b64(p_body)
+        print "  p_tag_key", b64(p_tag_key)
+        print "  message", message
+        print "  ciphertext", b64(ciphertext)
+        print "  tag", b64(tag)
+
     return full_package
 
 
-def unpackage(package, p_text, p_body, p_tag_key):
-    """Extract the message and verify its integrity.""" 
+def unpackage(package, p_text, p_body, p_tag_key, verbose=True):
+    """Extract the message and verify its integrity.
+
+    Args:
+        package: Packaged message to decrypt. (string)
+        p_text: Pad bytes used to hide the message. (string)
+        p_body: Pad bytes used to hide the message and tag. (string)
+        p_tag_key: Pad bytes to use as HMAC key. (string)
+        verbose: Whether to print parts to the console. (boolean)
+
+    Returns:
+        The plaintext message (string).
+    Raises:
+        CryptoError: If there is an error or the integrity check fails.
+    """
     # Assert parameter types.
     cassert(isinstance(package, str))
     cassert(isinstance(p_text, str))
@@ -89,7 +115,8 @@ def unpackage(package, p_text, p_body, p_tag_key):
     cassert(len(p_tag_key) == TAG_KEY_LENGTH)
 
     # Extract package contents
-    index = package[:INDEX_ENCODE_LENGTH]
+    i_enc = package[:INDEX_ENCODE_LENGTH]
+    index = decode_index(i_enc)
     encrypted_body = package[INDEX_ENCODE_LENGTH:]
 
     # Decrypt body.
@@ -101,7 +128,17 @@ def unpackage(package, p_text, p_body, p_tag_key):
     ciphertext = plain_body[:-TAG_LENGTH]
 
     # Compute the expected tag.
-    expected_tag = hmac_sha256(key=p_tag_key, message=index + ciphertext)
+    expected_tag = hmac_sha256(key=p_tag_key, message=i_enc + ciphertext)
+
+    if verbose:
+        print "unpackage verbose:"
+        print "  index", index
+        print "  index_encoded", b64(i_enc)
+        print "  p_text", b64(p_text)
+        print "  p_body", b64(p_body)
+        print "  p_tag_key", b64(p_tag_key)
+        print "  ciphertext", b64(ciphertext)
+        print "  tag", b64(tag)
 
     # Check the tag.
     if hmac.compare_digest(tag, expected_tag):
@@ -110,7 +147,7 @@ def unpackage(package, p_text, p_body, p_tag_key):
     else:
         raise CryptoError("Integrity Error") 
 
-def pre_unpackage(package):
+def pre_unpackage(package, verbose=False):
     """Extract what information is necessary to fetch before unpackaging.
 
     Returns:
@@ -130,13 +167,16 @@ def pre_unpackage(package):
     p_text_index = decode_index(package[:INDEX_ENCODE_LENGTH])
     p_body_index = p_text_index + message_length
     p_tag_key_index = p_body_index + body_length
-    return {
+    res = {
         "message_length": message_length,
         "body_length": body_length,
         "p_text_index": p_text_index,
         "p_body_index": p_body_index,
         "p_tag_key_index": p_tag_key_index,
     }
+    if verbose:
+        print res
+    return res
 
 def encode_index(index_num):
     """
@@ -191,3 +231,7 @@ def cassert(condition, error=None):
     """Assert and throw a CryptoError if it fails."""
     if not condition:
         raise CryptoError(error)
+
+
+def b64(string):
+    return base64.b64encode(string)
