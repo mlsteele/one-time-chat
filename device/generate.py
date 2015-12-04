@@ -133,7 +133,7 @@ def make_metadata(uid0, uid1, n_bytes, rservice):
         metadata1.write(json.dumps(data[1]))
     log("metadata for {} and {} have been written to {} and {}, respectively"
         .format(sfile[0], sfile[1], mfile[0], mfile[1]))
-logger = otc_log.start2()
+
 # d: 0 = production, 1 = status messages, 2 = full debug
 def log(msg=-1, d=0, condition=True):
 
@@ -144,18 +144,17 @@ def log(msg=-1, d=0, condition=True):
         header = "[]"
         if d == 0:
             header = "[INFO]"
-            logger.critical(msg)
-            print("logged as info")
+            logger.info(msg)
         elif d == 1:
             header = "[STATUS]"
-            logging.info(msg)
+            logger.info(msg)
         elif d == 2:
             header = "[DEBUG]"
-            logging.debug(msg)
+            logger.debug(msg)
         print(header + " " + msg)
 
 if __name__ == "__main__":
-    otc_log.start()
+    logger = otc_log.start("generate")
     args = docopt(__doc__)
     
     uid0 = args["UID1"]
@@ -189,4 +188,4 @@ if __name__ == "__main__":
     DEBUG = 2 if verbose else 0
     with open(filepath1, "wb") as f1, open(filepath2, 'wb') as f2:
         make_random_blob(f1, f2, uid0, uid1, n_bytes, rservice)
-    otc_log.stop()
+

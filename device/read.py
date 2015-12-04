@@ -126,9 +126,10 @@ def decrypt_index_skipped(sid, uid, decrypt_index):
     decrypt_optimum = metadata["decrypt_max"]
     d = metadata["direction"]
     if d == 1:
-        return decrypt_index < decrypt_optimum
+        ans = decrypt_index < decrypt_optimum
     if d == -1:
-        return decrypt_index > decrypt_optimum
+        ans = decrypt_index > decrypt_optimum
+    
 
 # Returns UID of this device
 def whoami(override_true_id=None):
