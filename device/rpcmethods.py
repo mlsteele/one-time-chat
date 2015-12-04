@@ -13,9 +13,9 @@ All methods that are RPCs should go here.
 ALLOW_LIST = [
     "package",
     "unpackage",
-    "whoami",
-    "test_prompt",
-    "teapot",
+    # "whoami",
+    # "test_prompt",
+    # "teapot",
 ]
 
 # Confirm controller handle.
