@@ -82,7 +82,6 @@ class OTC_Client(object):
         """Get the next ref for a recipient.
         This is the smallest ref number which has not yet been seen by the server.
         """
-        # TODO it might better if this came from the device instead.
         payload = {
             "recipient_uid": self.user_id,
         }
