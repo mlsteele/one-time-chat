@@ -15,7 +15,7 @@ Options:
 -k NKBYTES            Number of kibibytes to generate
 -m NMBYTES            Number of mebibytes to generate
 -s SVC --service=SVC  RNG service to use; must be either random
-                      or urandom. [default: urandom]
+                      or urandom. [default: random]
 -v --verbose          Be verbose
 -h --help             Show this screen and exit
 """
