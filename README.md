@@ -72,6 +72,7 @@ sudo /etc/init.d/rng-tools start
 #  plugging it back in and then re-starting rng-tools
 # N.B. To view how many bits of entropy are available, use:
 /proc/sys/kernel/random/entropy_avail
+```
 
 ## Generating the two pads
 Pad generation is assumed to be done on a trusted computing device,
