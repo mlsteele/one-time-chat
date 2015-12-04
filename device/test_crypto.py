@@ -4,8 +4,11 @@ import unittest
 
 class TestCrypto(unittest.TestCase):
     def test_xor(self):
-        # TODO write
-        pass
+        self.assertEqual("\x00", crypto.xor("\x00", "\x00"))
+        self.assertEqual("\x01", crypto.xor("\x00", "\x01"))
+        self.assertEqual("\x00", crypto.xor("\x01", "\x01"))
+        self.assertEqual("\x04\n\x05", crypto.xor("\x0f\x00\x00", "\x0b\n\x05"))
+
     def test_package_identity(self):
         index = 0
         message = "Test that pad being 0 is identity"
@@ -31,9 +34,13 @@ class TestCrypto(unittest.TestCase):
 
     def test_codec_index_identity(self):
         """Test that encoding and decoding an index works."""
-        # TODO write this test
-        for index in range(20):
-            assert crypto.decode_index(crypto.encode_index(index)) == index
+        for i in range(200):
+            index = i * 100000
+            encoded = crypto.encode_index(index)
+            self.assertEqual(6, len(encoded))
+            self.assertEqual(crypto.INDEX_ENCODE_LENGTH, len(encoded))
+            decoded = crypto.decode_index(encoded)
+            self.assertEqual(index, decoded)
 
     def test_encode_index_bad(self):
         """Test that encode index detects bad input."""
@@ -48,6 +55,8 @@ class TestCrypto(unittest.TestCase):
             crypto.decode_index("asdf")
         with self.assertRaises(CryptoError):
             crypto.decode_index("1234567")
+        with self.assertRaises(CryptoError):
+            crypto.decode_index(crypto.encode_index(crypto.INDEX_MAX+1))
 
 
 if __name__ == '__main__':
