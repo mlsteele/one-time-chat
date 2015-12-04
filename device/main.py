@@ -15,8 +15,10 @@ from docopt import docopt
 import rpcserver
 import rpcmethods
 import confirm
+import otc_log
 
 if __name__ == "__main__":
+    otc_log.start()
     arguments = docopt(__doc__)
     port = arguments["<port>"]
     port = int(port) if port else 9051
@@ -40,3 +42,4 @@ if __name__ == "__main__":
     print "Shutting down."
     if csc:
         csc.shutdown()
+    otc_log.stop()
