@@ -154,6 +154,9 @@ class OTC_Client(object):
                 print "to quit type quit or q or exit."
                 print "============"
             elif (command  == "send"):
+                if len(user_input) < 2:
+                    print "Invalid command. See help for usage."
+                    continue
                 recipient = user_input[1]
                 message = " ".join(user_input[2:])
                 success = self.send_secure(recipient, message)
@@ -162,6 +165,9 @@ class OTC_Client(object):
                 else:
                     print "Error: Failed to send message."
             elif command == "ms":
+                if len(user_input) < 2:
+                    print "Invalid command. See help for usage."
+                    continue
                 recipients = user_input[1].split(",")
                 message = " ".join(user_input[2:])
                 for recipient in recipients:
@@ -173,6 +179,9 @@ class OTC_Client(object):
                     else:
                         print "Error: Failed to send message."
             elif command == "gs":
+                if len(user_input) < 2:
+                    print "Invalid command. See help for usage."
+                    continue
                 message = " ".join(user_input[2:])
                 for recipient in self.groups[user_input[1]]:
                     if recipient == self.user_id:
@@ -183,6 +192,9 @@ class OTC_Client(object):
                     else:
                         print "Error: Failed to send message."
             elif command == "group":
+                if len(user_input) < 2:
+                    print "Invalid command. See help for usage."
+                    continue
                 self.groups[user_input[1]] = user_input[2:]
             elif command == "id":
                 print "User ID:", self.user_id
