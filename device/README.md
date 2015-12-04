@@ -4,6 +4,9 @@ Software to run on the pad device.
 The pad device is a separate device (e.g. raspberry pi) from the one running the client software.
 The device software can also be run on the same system as the client for convenience.
 
+The rest of the document is instructions for setting up a raspberry pi.
+To run the device software on the same computer as the client, just run `device/main.py -h`.
+
 # Network Setup
 In order to set up the network between the device and client follow these steps.
 
