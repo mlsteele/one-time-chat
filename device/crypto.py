@@ -141,7 +141,7 @@ def unpackage(package, p_text, p_body, p_tag_key, verbose=True):
         print "  tag", b64(tag)
 
     # Check the tag.
-    if hmac.compare_digest(tag, expected_tag):
+    if compare_digest(tag, expected_tag):
         message = decrypt(ciphertext, p_text)
         return message
     else:
@@ -226,3 +226,19 @@ def cassert(condition, error=None):
 
 def b64(string):
     return base64.b64encode(string)
+
+
+def compare_digest(digest1, digest2):
+    """Compare two digests securely.
+
+    Uses hmac.secure_digest if it is available.
+    Falls back to string comparison.
+
+    The fallback in our case is ok because the input
+    to the hmac is encrypted anyway.
+    """
+    hmac_compare_digest = getattr(hmac, "compare_digest")
+    if hmac_compare_digest:
+        return hmac_compare_digest(digest1, digest2)
+    else:
+        return digest1 == digest2
