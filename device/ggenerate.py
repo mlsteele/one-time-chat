@@ -111,33 +111,36 @@ def make_random_blob(fs, uids, gid, n_bytes, rservice):
 
 
 def make_metadata(uids, gid, n_bytes, rservice):
-    def make_data(uid, rid, direction):
-        assert direction in [1,-1]
+    def make_data(uid_index):
+        uid = uids[uid_index]
         data = {}
         data["uid"] = uid
-        data["rid"] = rid
-        data["store_filename"] = get_storefile_name(uid, rid)
-        data["metadata_filename"] = get_metadatafile_name(uid, rid)
+        data["gid"] = gid
+        data["uids"] = " ".join(uids)
+        data["store_filename"] = get_gstorefile_name(uid, gid)
+        data["metadata_filename"] = get_gmetadatafile_name(uid, gid)
         data["n_bytes"] = n_bytes
         data["rservice"] = rservice
-        data["split_index"] = n_bytes / 2
-        data["direction"] = direction
-        data["encrypt_index"] = 0 if direction == 1 else n_bytes-1
-        data["decrypt_log"] = ""
-        data["decrypt_max"] = n_bytes-1 if direction == 1 else 0
+        data["encrypt_index"] = 0
+        for i in range(len(uids)):
+            data["split_index.{}".format(uid)] =  int(
+              round(n_bytes * 1.0 * (uid_index + 1) / len(uids)))
+            data["decrypt_log.{}".format(uid)] = ""
+            data["decrypt_max.{}".format(uid)] = 0
+
         # These two must always go last, in this order
         data["n_eles"] = len(data.items())+2
         data["checksum"] = hash(frozenset(data.items()))
         return data
+    
+    data = [make_data(i) for i in range(len(uids))]
+    mfile = [mdata["metadata_filename"] for mdata in data]
+    sfile = [mdata["store_filename"] for mdata in data]
 
-    data = [make_data(uid0, uid1, 1), make_data(uid1, uid0, -1)]
+    for i in range(len(mfile)):
+        with open(mfile[i], "w") as metadata_fs:
+            metadata_fs.write(json.dumps(data[i]))
 
-    mfile = [data[0]["metadata_filename"], data[1]["metadata_filename"]]
-    sfile = [data[0]["store_filename"], data[1]["store_filename"]]
-
-    with open(mfile[0], "w") as metadata0, open(mfile[1], "w") as metadata1:
-        metadata0.write(json.dumps(data[0]))
-        metadata1.write(json.dumps(data[1]))
     log("metadata for {} and {} have been written to {} and {}, respectively"
         .format(sfile[0], sfile[1], mfile[0], mfile[1]))
 
