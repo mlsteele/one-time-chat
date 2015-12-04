@@ -41,7 +41,6 @@ def package(index, message, p_text, p_body, p_tag_key, verbose=False):
         The secured message, ready for sending. (string)
     """
     # Assert parameter types.
-    ##TODO: better assert check error messages
     cassert(isinstance(index, int), "Index not int")
     cassert(isinstance(message, str))
     cassert(isinstance(p_text, str))
@@ -55,7 +54,7 @@ def package(index, message, p_text, p_body, p_tag_key, verbose=False):
     cassert(len(p_tag_key) == TAG_KEY_LENGTH)
 
     # Encrypt the plaintext.
-    ciphertext = encrypt(message, p_text)
+    ciphertext = xor(message, p_text)
 
     # Encode the index.
     i_enc = encode_index(index)
@@ -67,7 +66,7 @@ def package(index, message, p_text, p_body, p_tag_key, verbose=False):
 
     body = ciphertext + tag
 
-    full_package = i_enc + encrypt(body, p_body)
+    full_package = i_enc + xor(body, p_body)
 
     # Size of result.
     cassert(len(full_package) == len(message) + INDEX_ENCODE_LENGTH + TAG_LENGTH)
@@ -88,7 +87,7 @@ def package(index, message, p_text, p_body, p_tag_key, verbose=False):
     return full_package
 
 
-def unpackage(package, p_text, p_body, p_tag_key, verbose=True):
+def unpackage(package, p_text, p_body, p_tag_key, verbose=False):
     """Extract the message and verify its integrity.
 
     Args:
@@ -120,7 +119,7 @@ def unpackage(package, p_text, p_body, p_tag_key, verbose=True):
     encrypted_body = package[INDEX_ENCODE_LENGTH:]
 
     # Decrypt body.
-    plain_body = decrypt(encrypted_body, p_body)
+    plain_body = xor(encrypted_body, p_body)
 
     # The starting index of the body pad: index + length of cipher text
     # Length of cipher text = length of body - length of tag
@@ -142,7 +141,7 @@ def unpackage(package, p_text, p_body, p_tag_key, verbose=True):
 
     # Check the tag.
     if compare_digest(tag, expected_tag):
-        message = decrypt(ciphertext, p_text)
+        message = xor(ciphertext, p_text)
         return message
     else:
         raise CryptoError("Integrity Error") 
@@ -196,20 +195,17 @@ def decode_index(index_str):
         raise CryptoError(ex)
 
 
-def xor(charA, charB):
+def xor(stringA, stringB):
+    """XOR two strings."""
+    return "".join(map(xor_char_helper, zip(stringA, stringB)))
+
+
+def xor_char(charA, charB):
     return chr(ord(charA) ^ ord(charB))
 
 
-def xorHelper((charA,charB)):
-    return xor(charA, charB)
-
-
-def encrypt(message, pad):
-    return "".join(map(xorHelper, zip(message, pad)))
-
-
-def decrypt(cipher, pad):
-    return "".join(map(xorHelper, zip(cipher, pad)))
+def xor_char_helper((charA, charB)):
+    return xor_char(charA, charB)
 
 
 def hmac_sha256(key, message):
