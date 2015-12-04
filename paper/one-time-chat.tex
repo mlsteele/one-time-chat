@@ -8,6 +8,7 @@
 \usepackage[letterpaper, top=2cm, margin=1in]{geometry}
 \usepackage{listings}
 \setlength{\columnsep}{0.5cm}
+\usepackage{hyperref}
 
 
 \title{6.858 Project: One Time Chat}
@@ -17,34 +18,15 @@
 \begin{document}
 
 \maketitle
-
-%% things we should touch upon:
-
-%% according to https://www.usenix.org/legacy/event/samples/submit/advice.html
-%% original ideas: the new ideas our system introduces.
-
-%% reality: have we implemented the system we proposed?
-
-%% lessons: What have we learned? What? What do you mean?
-
-%% choices: what were the alternatives considered at various points, and why were the choices made the way they were? 
-
-%% context: what were the assumptions on which the work was made? Basically outline our threat model. 
-
-%% focus: Does the introductory material contain excess baggage not needed for your main development?
-
-%% The big ideas in our system is the fact that we are utilizing availability to the generation and storage of a lot of random bits 
-%% We can copy stuff from our proposal
-%%    https://docs.google.com/document/d/1_FF7lQLu9n2U8_IKfhBmUNniqJRTgcijVhL4yp7JJ1Q/edit
-% \begin{multicols}{2}
-
+\url{https://github.com/mlsteele/one-time-chat}
+% TODO fixurl.
 
 \section{Abstract}
 One Time Chat is a chat service that aims to be information-theoretically secure. Specifically, we propose a chat service that is built on top of a randomly-generated one-time pad. Furthermore, we explore limitations to this model, why one-time pad encryption isn't typically used in practice, and how we aim to resolve these issues.
 %% http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6769090 %% 
 
 \section{Introduction}
-Users typically look to public-key cryptography for secure communication. While public-key cryptography is widely used and sufficiently secure in practice, it is not information-theoretically secure. The assumption behind the security of public-key cryptography is that factorizing integers is thought to be a computationally hard problem. However, this complexity has not been proven, and there are no gaurantees that this presumed one-way function will not be broken in the future.
+Users typically look to public-key cryptography for secure communication. While public-key cryptography is widely used and is sufficiently secure in practice, it is not information-theoretically secure. The assumption behind the security of public-key cryptography is that factorizing integers is thought to be a computationally hard problem. However, this complexity has not been proven, and there are no gaurantees that this presumed one-way function will not be broken in the future.
  
 Fortunately, encryption using a one-time pad has been proven to be completely information-theoretically secure (under the right circumstances). We propose a chat service that is built upon a large\footnote{
 In practice, one that will last a lifetime.
@@ -82,7 +64,7 @@ See Section~\ref{sec:encryption} for details.
 }
 
 Our design involves two users\footnote{
-``Group chat'' (i.e. chat among three or more users) is implemented as a simple extension on top of two-way secure chat. See Section~\ref{sec:clientexample}.
+``Group chat'' (i.e. chat among three or more users) is implemented as a simple extension on top of two-way secure chat (see Section~\ref{sec:client}). To send a message to a ``group,'' the client just interprets it as multiple commands to send a message to single contacts.
 }
 meeting in person and generating a pad from a local source of randomness, e.g. UNIX's \texttt{/dev/random}. We have noticed in practice that this can take a while, but the wait is well worth it, and users could certainly find ways of occupying themselves while the pad is generated. Users then (presumably securely) transfer the generated pad to their local storage device, and part ways.
 
@@ -172,7 +154,7 @@ Lengths of the components:
 |p_{key}| &= 16\, bytes \\
 \end{align*}
 
-A package is composed of an index, and a body. The index allows the user receiving the package to infer from where in the pad to construct pad segments $p_{text}, p_{body}, p_{key}$. The body is our way of encrypting a message and providing integrity to the packet. The rest of this section aims to explain why we think this scheme accomplishes our goals.  
+A package is composed of an index, and a body. The index allows the user receiving the package to infer from where in the pad to construct pad segments $p_{text}, p_{body}, p_{key}$. The index also allows flexibility in the system to drop packages, without ruining desyncronizing the use of the pad. The body is our way of encrypting a message and providing integrity to the packet. The rest of this section aims to explain why we think this scheme accomplishes our goals.  
 
 Our system requires $2\cdot |message| + 48$ bytes of pad to encrypt and securely send a message (see Section~\ref{sec:encryption}). With the (very generous) assumption that an average text message is 100 bytes (i.e. 100 characters long), if a user had a 1 TB pad, he could could send over $150000$ such texts \emph{per day} for the next 80 years.\footnote{
 Alternatively, he could choose to send up to 4 or 5 Vlad the Impaler articles per day.
@@ -185,15 +167,9 @@ It is impossible to deduce $message$ given $message \oplus p_{text}$
 as long an adversary has not obtained $p_{text}$, and it is impossible to deduce $body$ from $body \oplus p_{text}$. Since our threat model assumes an adversary does not have access to the pad, it is impossible for an adversary to know what $message$ and $body$ are. We do not care to provide confidentiality of $index$, because without the pad this piece of information does not reveal critical information. 
 
 \subsection{Integrity}
-We argue that $body$ provides integrity of the package. An adversary knows where in $package$ $ciphertext$ lies (though they don't know what $ciphertext$ is since it is encrypted with part of $p_{body}$). Since one-time encryption is malleable, adversaries know that flipping bits in $ciphertext$ will flip bits in $message$. However, if an adversary doesn't change $tag$, then with high probability the user would be able to tell that $ciphertext$ has been changed, because the modified $ciphertext$ would fail to have the same HMAC. For the adversary to fool the receiver, they would thave to change the tag as well. Because the HMAC has a private key that the adversary does not know $p_{key}$.
-If an adversary changed the bits corresponding to $ciphertext$, the tag would reflect that change. In other words, when users take they keyed HMAC of the modified $ciphertext$, with high probability it won't equal the  
+We argue that $body$ provides integrity of the package. An adversary knows where in $package$ $ciphertext$ lies (though they don't know what $ciphertext$ is since it is encrypted with part of $p_{body}$). Since one-time-pad encryption is malleable, adversaries know that flipping bits in $ciphertext$ will flip bits in $message$. However, if an adversary doesn't change $tag$, then with high probability the user would be able to tell that $ciphertext$ has been changed, because the modified $ciphertext$ would fail to have the same HMAC.
 
-We guarantee good integrity.
-% < say more.
-
-\subsection{Description}
-% < Packaging description.
-% < pseudo code of packaging
+For the adversary to fool the receiver, they would have to change the tag as well. Because the adversary doesn't know the private key,$p_{key}$, of the HMAC, we believe an adversary wouldn't be able to to forge the tag.
 
 \subsection{Attacks}
 Here we walk through some potential attacks and show how secure our scheme is against them.
@@ -219,7 +195,7 @@ If an attacker can intercept and modify all network traffic between two clients,
 \subsubsection{Pad Re-use}
 In any one-time-pad based scheme, it is vitally important that each bit in the pad is only used to encrypt once, ever.
 Our system defends against pad re-use by having the device manage which bits have been used to encrypt and decrypt during the lifetime of the pad.
-Because the pad is stored on two devices, it is critical to make sure that even if the devices cannot communicate, they do not encrypt messages with the same bits as each other. This is why we divide the initial pad in half and dedicate each half for sending from one device.
+Because the same pad is stored on two devices, it is critical to make sure that even if the devices cannot communicate, they do not encrypt messages with the same bits as each other. This is why we divide the initial pad in half and dedicate each half for sending from one device (see Section~\ref{sec:padstruc}).
 
 % < software doesn't send from same pad bits ever
 % < we only release information from decrypted if integrity check succeeds
@@ -239,6 +215,7 @@ The message relay server is an untrusted server used to transfer messages betwee
 \end{figure}
 
 \subsection{Pad Structure and Storage}
+\label{sec:padstruc}
 The pad data for a pair of users is stored in two files in the device's file system. Suppose two users, Alice and Bob, have set up a shared pad (see Section~\ref{sec:padgen} for details on pad generation) to communicate with each other. Alice's device stores two files: \texttt{alice.bob.random.store} and \texttt{alice.bob.random.metadata}; Bob has oppositely named files.
 
 The store file (\texttt{alice.bob.random.store}) stores the randomly-generated pad bits. Alice and Bob's store files are identical, i.e.
@@ -254,23 +231,23 @@ The metadata file \texttt{alice.bob.random.metadata} stores certain information 
   \item[] \textbf{n\_bytes} Total number of shared pad bytes
   \item[] \textbf{rservice} Service used to generate the bytes (\texttt{random} or \texttt{urandom}). In practice this should always be \texttt{random}.
   \item[] \textbf{split\_index} Index dividing the two halves of the pad
-  \item[] \textbf{direction} Direction of encryption (1 means encrypt starting at index 0 and moving forward, means encrypt starting at index \texttt{n\_bytes - 1} and moving backwards).
+  \item[] \textbf{direction} Direction of encryption (1 means encrypt starting at index 0 and moving forward, -1 means encrypt starting at index \texttt{n\_bytes - 1} and moving backwards).
   \item[] \textbf{encrypt\_index} Index of pad to start encrypting from the next time a pad segment is requested
   \item[] \textbf{decrypt\_log} A log of all decryption requests the device has seen; each decryption request is of the form \texttt{i-j} which signifies that pad segment from $i$ to $j$ was requested to decrypt.
-  \item[] \textbf{decrypt\_max} Maximum index for a pad segment that has been requested for a decryption. Note that if direction is 1, you \emph{decrypt} backwards (since your contact has direction -1), this is actually a minimum.
+  \item[] \textbf{decrypt\_max} Maximum index for a pad segment that has been requested for a decryption. Note that if direction is 1, you \emph{decrypt} backwards (since your contact has direction -1), so this is actually a minimum.
   \item[] \textbf{n\_eles} Number of fields in this metadata, including this one.
   \item[] \textbf{checksum} Hash to help ensure the metadata wasn't accidentally modified. Not intended to protect against a malicious adversary.
 \end{itemize}
 
 The reason we split the pad into two is so that messages can be sent from Alice to Bob and from Bob to Alice asynchronously: if Alice sent $m_A$ with index $i_A$ to Bob, while at the same time Bob sent message $m_B$ to Alice with index $i_B$, then if both users were reading from the same portion of the pad, there could be interference: both could, for example, try to use the same portion of the pad to encrypt, which breaks the security of a one-time pad. By splitting up the pad, each user has a dedicated set of bits to send (encrypt) from, and the recipient knows where in the pad to decrypt from when they see an incoming message from the sender.
 
-Alice encrypts from index 0 moving forward in the top half of the pad (delimiter stored by the \texttt{split\_index} field), and Bob encrypts from index \texttt{n\_bytes - 1} moving backward in the bottom half the pad. Similarly, when Alice decrypts a message (from Bob), she reads Bob's half of the pad, in reverse; and when Bob decrypts a message, he reads Alice's half of the pad in the forward direction. See Figure \ref{fig:padsplit} for a helpful diagram.
+
+Alice encrypts from index 0 moving forward in the top half of the pad (the index delimiting two halves is stored by the \texttt{split\_index} field), and Bob encrypts from index \texttt{n\_bytes - 1} moving backward in the bottom half the pad. Similarly, when Alice decrypts a message (from Bob), she reads Bob's half of the pad, in reverse; and when Bob decrypts a message, he reads Alice's half of the pad in the forward direction. See Figure \ref{fig:padsplit} for a helpful diagram.
 
 \begin{figure}[htp]
 \centering
 \includegraphics[width=1.5in]{padsplit}
-\caption{Pad Layout. \texttt{encrypt(a,b)} means that \texttt{a} is sending to \texttt{b} and needs to encrypt. Similarly, 
-
+\caption{Pad Layout. \texttt{encrypt(a,b)} means that \texttt{a} is sending to \texttt{b} and needs to encrypt. Similarly, \texttt{decrypt(a,b,i)} refers to  when \texttt{b} receives the message from \texttt{a} and wants to decrypt it, starting at index \texttt{i}.}
 \label{fig:padsplit}
 \end{figure}
 
@@ -290,7 +267,7 @@ We use the \texttt{/dev/random} service to generate the random bits of our pads.
 
 Note that for development and debugging, we often used \texttt{urandom} since it is much faster.
 
-Figure \ref{fig:genpad} shows an example of generating an (insecure) pad from urandom.
+Figure \ref{fig:genpad} shows an example of generating an (insecure) pad from \texttt{urandom}.
 
 \begin{figure}[htp]
 \centering
@@ -301,98 +278,97 @@ Figure \ref{fig:genpad} shows an example of generating an (insecure) pad from ur
 
 
 \subsection{Device (Pad Device)}
-The pad device is a device dedicated to storing and mediating access to the one time pad data for a user and their contacts. Each user has one device which they are responsible for keeping safe. A user initializes their device with a shared pad for each contact they wish to communicate with.
+The pad device is a device dedicated to storing and mediating access to the one time pad data for a user and his contacts. Each user has one device which they are responsible for keeping safe. A user initializes their device with a shared pad for each contact they wish to communicate with.
 
-Ideally, a Raspberry Pi would be used to run the device code and connect to the client computer through an ethernet cable. We got that to work for a little while. But we have had so much trouble with that we chose to run device software on the same computer as the client software. This eliminates the security benefits of having a dedicated device, but the code is still implemented in such a way that it is easy to run it on a separate device. For the analysis, we assume that this part is working.
-
+Ideally, a Raspberry Pi would be used to run the device code and connect to the client computer via an ethernet cable. We were able to make this work for awhile, but had so much trouble with it that we chose to emulate the device software on the same computer as the client software for development purposes. While this eliminates the security benefits of having a dedicated device, the proof of concept still stands. The code is still implemented in such a way that it is easy to run it on a separate device. For analysis, we assume that the users are utilizing the separate Raspberry Pi device.
 
 \subsubsection{Packaging and Unpackaging}
-The pad device is responsible for encrypting and decrypting messages. The encryption and decryption methods are in \texttt{device/crypto.py} with some tests in \texttt{device/test\_crypto.py}. See Section~\ref{sec:encryption} for the details of the encryption scheme. The crypto implementation relies on a simple xor function and on Python's built-in Sha256-based HMAC from the \texttt{hmac} module.
+The pad device is responsible for encrypting and decrypting messages. The encryption and decryption methods are in \texttt{device/crypto.py} with some tests in \texttt{device/test\_crypto.py}. See Section~\ref{sec:encryption} for the details of the encryption scheme. The cryptography implementation relies on a simple XOR function and on Python's built-in sha256-based HMAC from the \texttt{hmac} module.
 
-The two crypto functions used by the device are package and unpackage which when given message
-data and pad data secure and unlock messages. These are base64 encoded for transport convenience when
-returned to the client.
+The two crypto functions used by the device are \texttt{package} and \texttt{unpackage} which, when given (as arguments) message data and pad data, secure and unlock messages. For transport convenience, packaged messages (i.e. encrypted and signed messages) are encoded in base64 when being transported between the device and client.
 
+The signatures of the \texttt{package} and \texttt{unpackage} functions are below:
 \begin{lstlisting}
 package(index, message,
-  p_text, p_body, p_tag_key):
+  p_text, p_body, p_tag_key)
 unpackage(package,
-  p_text, p_body, p_tag_key):
+  p_text, p_body, p_tag_key)
 \end{lstlisting}
+where \texttt{p\_text}, \texttt{p\_body}, and \texttt{p\_key} are different (consecutive) segments from the pad.
 
 \subsubsection{Confirmation}
-A malicious client might get a connection to the pad device. In this case, to defend the pad against malicious client software, a touchscreen on the raspberry pi is used to ask the user whether it is ok to use pad bits to encrypt and decrypt messages. This is a trade-off as it is an inconvenience to the user, but makes client-based attacks based on brute force almost impossible.
+A malicious client might get a connection to the pad device. In this case, to ensure that the device doesn't use or release pad bits that it shouldn't, a touchscreen on the Raspberry Pi is used to ask the user whether it is okay to use pad bits to encrypt and decrypt messages; see Figure~\ref{fig:confirmation} for an example of this. (The touchscreen and software is controlled by the device so it is assumed to be trustworthy.) This allows the user to have full control of the pad bits that are used in the chat; a user can choose to decline if, for example, the message says that the client is requesting 500 bytes of pad when the user had typed a short message like ``hello.'' This also makes malicious-client-based brute force attacks nearly impossible.
+
+This confirmation dialogue is certainly an inconvenience to the user, but it is a trade-off for security that we think a security-conscious user would be willing to make.
 
 \begin{figure}[htp]
 \centering
 \includegraphics[width=2in]{confirm}
 \caption{Confirmation dialog on device screen.}
+\label{fig:confirmation}
 \end{figure}
 
 \subsubsection{RPC Interface}
-The client communicates with the pad device via an HTTP server running on the device. The server is not accessible to the internet, but is available through the ethernet cable. Or as a local service when running on the same machine as the client.
+The client communicates with the pad device via an HTTP server running on the device. The server is not accessible to the internet, but is available through the ethernet cable, or as a local service when running on the same machine as the client.
 
 The RPC server is an HTTP server which has a client that can be used as if it were a normal python module
 from the client. Arguments and return values are sent as JSON.
-This RPC server currently allows two methods, \texttt{package} and \texttt{unpackage}.
-Those methods are responsible for asking the user for confirmation, getting pad data from pad storage, feeding it to the crypto functions, and returning the result. Any unexpected errors that occur are hidden from the client so that in the case of a programming error on the device, no sensitive information is leaked through errors.
-
+This RPC server currently allows two exposed methods, \texttt{package} and \texttt{unpackage}, with signatures as follows:
 \begin{lstlisting}
-package(src_uid, dst_uid, plaintex):
-unpackage(src_uid, dst_uid, package):
+package(src_uid, dst_uid, plaintex)
+unpackage(src_uid, dst_uid, package)
 \end{lstlisting}
+These methods are responsible for asking the user for confirmation, getting pad data from pad storage, feeding it to the crypto functions, and returning the result. Any unexpected errors that occur are hidden from the client so that in the case of a programming error on the device, no sensitive information is leaked through errors.
 
 \subsubsection{Logging}
 The device logs suspicious occurrences in a device-local log file.
-All log entries have a timestamp and description of the error as well as
+All log entries have a time-stamp and description of the error as well as
 additional information about the messages involved.
 
-Anytime the message integrity check fails (mismatched HMAC), the event
-is logged.
+Any time the message integrity check fails (i.e. due to a mismatched HMAC), the event is logged.
 
 If a message is received which uses a pad index that was used before,
 this event is logged on the device (in addition to instructing the client
-to display a warning).
+to display a warning); See Figure~\ref{fig:reuse} for an example of this.
 
-If a pad index appears to have been skipped the event is logged
-(in addition to instructing the client
-to display a warning).
-
-\begin{figure}[htp]
-\centering
-\includegraphics[width=3in]{sample}
-\caption{Example Client Use}
-\end{figure}
-\label{sec:clientexample}
-
-This log exists on the device and is inaccessible from outside.
-The hope is that this log could provide some help in forensics
-and damage analysis in the event of a known compromise.
-
-
-\subsection{Chat Client}
-The chat client presents a command line interface to the user for sending and receiving messages. It communicates with the device to request encryption and decryption, and exchanges encrypted messages with a relay server.
-
-To start the client a user gives it as parameters the URL of the chat server, the URL of the device RPC channel, and their username.
+If a pad index appears to have been skipped, the event is logged (in addition to instructing the client to display a warning).
 
 \begin{figure}[htp]
 \centering
 \includegraphics[width=3in]{reuse}
 \caption{Detecting Reused Pad Data}
+\label{fig:reuse}
+\end{figure}
+
+This log exists on the device and hence cannot be tampered with maliciously. It is inaccessible from anywhere that is not the client.
+The hope is that a security-conscious user would frequently review this log. Additionally, this log could provide some help in forensics
+and damage analysis in the event of a known compromise.
+
+\subsection{Chat Client}
+\label{sec:client}
+
+The chat client presents a command line interface to the user for sending and receiving messages. It communicates with the device to request encryption and decryption, and exchanges encrypted messages with a relay server. Figure~\ref{fig:clientexample} shows a use case of the client.
+
+To start the client a user gives it as parameters the URL of the chat server, the URL of the device RPC channel, and their username.
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=3in]{sample}
+\caption{Example Client Use}
+\label{fig:clientexample}
 \end{figure}
 
 The messaging-related client commands are listed below.\\
-Send a message:\\
+Send a message to a contact:\\
 \-\ \-\ \textbf{send} [target] [message]\\
-Send to multiple:\\
+Send to multiple contacts:\\
 \-\ \-\ \textbf{ms} user1,user2,... [message] (multisend)\\
-Define a group:\\
+Define a group alias:\\
 \-\ \-\ \textbf{group} [groupname] user1,user2,...\\
-Send to group:\\
+Send message to users in a group:\\
 \-\ \-\ \textbf{gs} [groupname] message\\
 Receive messages:
 Press enter.
-
 
 \subsection{Message Relay Server}
 The relay server is an untrusted server which relays messages between chat clients.
@@ -400,7 +376,7 @@ It is implemented as a simple HTTP server with a single table for messages.
 
 The server is not designed to be secure at all, but to be the minimum to demonstrate that
 the rest of the system could work. It serves over HTTP with no authentication at all.
-This is consistent with our threat model of not trusting the server but if One Time Chat were to be effectively used then a server with additional security measures would be required. The implementation is in \texttt{server/server.py} and stores messages for delivery in \texttt{server/database.db}.
+This is consistent with our threat model of not trusting the server, but if One Time Chat were to be effectively used, then a server with additional security measures would be required. The implementation is in \texttt{server/server.py} and stores messages for delivery in \texttt{server/database.db}.
 
 The server provides the following endpoints for clients:
 \begin{lstlisting}
@@ -414,15 +390,12 @@ The server provides the following endpoints for clients:
   - start_ref
 \end{lstlisting}
 
-Each message is assigned a ref number which clients keep track of in order
+Each message is assigned a reference number which clients keep track of in order
 to fetch only messages they have not seen before from the server.
 The latest ref is fetched from the server each time the client starts.
 
-
-
 \section{Conclusion}
-At the end of the day, we have implemented our own chat service, and our own cryptography. In other words, we have broken the first rule of cryptography which is don't write your own cryptography. As we iterated through the design of our protocol we learned how subtle details in protocol could lead compromises in confidentiality and integrity. As it stands we believe our system is secure under our threat model, and that our approach in sharing a large pad on a secure device is close step to information theoretically secure communication.
+At the end of the day, we have implemented our own chat service, and our own cryptography. In other words, we have broken the first rule of cryptography, which is \emph{don't write your own cryptography}. As we iterated through the design of our protocol we learned how subtle details in protocol could lead to compromises in confidentiality and integrity. As it stands, we believe our system is secure under our threat model, and that our approach in sharing a large pad on a secure device is close step to information-theoretically secure communication.
 
-
-% \end{multicols}
+% this is cool: https://www.usenix.org/legacy/event/samples/submit/advice.html
 \end{document}
