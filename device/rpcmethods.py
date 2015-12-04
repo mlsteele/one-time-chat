@@ -4,6 +4,7 @@ import os
 import json
 import base64
 import traceback
+import logging
 
 """
 All methods that are RPCs should go here.
@@ -75,7 +76,7 @@ def unpackage(src_uid, dst_uid, package_b64):
     skip_detected = read.decrypt_index_skipped(src_uid, dst_uid, p_text_index)
     reuse_detected = read.decrypt_index_used(src_uid, dst_uid, p_text_index)
 
-    next_index = p_text_index
+    start_index = next_index = p_text_index
     (p_text, next_index) = read.read_decrypt_pad(src_uid, dst_uid, next_index, message_length)
     (p_body, next_index) = read.read_decrypt_pad(src_uid, dst_uid, next_index, message_length + crypto.TAG_LENGTH)
     (p_tag_key, _)       = read.read_decrypt_pad(src_uid, dst_uid, next_index, crypto.TAG_KEY_LENGTH)
@@ -87,6 +88,14 @@ def unpackage(src_uid, dst_uid, package_b64):
             "message": message,
             "skip_detected": skip_detected,
             "reuse_detected": reuse_detected,
+        }
+    except crypto.IntegrityError:
+        traceback.print_exc()
+        logging.error("Integrity error in message from {} to {} with index {}".format(
+            src_uid, dst_uid, start_index))
+        return {
+            "success": False,
+            "error":"Decryption failed.", # Don't tell client specifics.
         }
     except crypto.CryptoError:
         traceback.print_exc()
