@@ -1,6 +1,9 @@
 from metadata import *
 import logging
 
+class PadContainException(Exception):
+    """Exception raised when pad is depleted."""
+
 # Returns the relevant portion of the pad
 def read_decrypt_pad(sid, uid, decrypt_index, clen):
     """ Read the specified bytes from the pad for decryption.
@@ -78,11 +81,11 @@ def read_encrypt_pad(uid, rid, mlen):
     with open(storeFile, "rb") as store:
         e = metadata["encrypt_index"]
         endIndex = e + d * mlen
-        assert endIndex >= 0 and endIndex < metadata["n_bytes"]
+        pad_contains_assert(endIndex >= 0 and endIndex < metadata["n_bytes"])
         if d == 1:
-            assert endIndex < metadata["split_index"]
+            pad_contains_assert(endIndex < metadata["split_index"])
         if d == -1:
-            assert endIndex >= metadata["split_index"]
+            pad_contains_assert(endIndex >= metadata["split_index"])
         
         with open(metadataFile, "w") as mfile:
             updates = {"encrypt_index": e+d*mlen}
@@ -168,3 +171,7 @@ def whoami(override_true_id=None):
     metadata_file = filter(lambda f: f.find(METADATA_STEM) > -1, files)[0]
     uid = metadata_file[:metadata_file.index(".")]
     return uid
+
+def pad_contains_assert(condition):
+    if not condition:
+        raise PadContainException()

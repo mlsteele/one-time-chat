@@ -43,6 +43,11 @@ def package(src_uid, dst_uid, message):
             "success": False,
             "error": "Shared pad not found.",
         }
+    except read.PadContainException:
+        return {
+            "success": False,
+            "error": "Pad depleted.",
+        }
 
     try:
         package = crypto.package(index, message, p_text, p_body, p_tag_key, verbose=True)
