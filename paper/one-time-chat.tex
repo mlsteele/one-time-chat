@@ -52,7 +52,6 @@ In practice, one that will last a lifetime.
 one-time pad, allowing two (or more) users to securely communicate with each other with guaranteed confidentiality and integrity.
 
 \subsection{Usage of a One-time Pad}
-
 Suppose Alice wants to send Bob a message. In order to guarantee to both Alice and Bob that her message $m_1$ will be securely\footnote{
 that is, in a manner in which no other user will be able to infer the content of the message
 }
@@ -77,8 +76,20 @@ Together, these three issues make one-time pads less preferred for encryption th
 %issue two: no reuse pad
 %isue three: length of pad = length of mesage.
 
-\section{Definitions}
-We define terms:
+\section{Design}
+We believe that much of the inconvenience of using one-time pads can be solved by generating and sharing a pad that is long enough to encrypt all messages that a user could feasibly send in his lifetime. We hypothesize that a pad on the order of 1 terabyte (TB) in size would be enough to encrypt every text message for the rest of his life. \footnote{
+See Section~\ref{sec:encryption} for details.
+}
+
+Our design involves two users\footnote{
+``Group chat'' (i.e. chat among three or more users) is implemented as a simple extension on top of two-way secure chat. See Section~\ref{sec:clientexample}.
+}
+meeting in person and generating a pad from a local source of randomness, e.g. UNIX's \texttt{/dev/random}. We have noticed in practice that this can take a while, but the wait is well worth it, and users could certainly find ways of occupying themselves while the pad is generated. Users then (presumably securely) transfer the generated pad to their local storage device, and part ways.
+
+At this point, the users can store their shared one-time pad on hardware devices and communicate using our chat system. Since both users share the same stream of random bits, they can achieve perfect security under certain threat model assumptions, as long as they synchronize their use of the pad.
+
+\subsection{Definitions}
+We define the following terms:
 \begin{itemize} \itemsep0em 
   \item \textbf{User} Person using the chat service.
   \item \textbf{Client} Command line interface and chat software, typically run on a computer.
@@ -94,7 +105,7 @@ We define terms:
 \end{itemize}
 
 
-\section{Goals}
+\subsection{Goals}
 One Time Chat has been designed to address several specific goals that we have decided are important. We enumerate our goals below:
 \begin{itemize}
 \item \textbf{Confidentiality}: Messages sent from user A to user B should only be viewable by users A and B.\footnote{
@@ -107,7 +118,7 @@ More strongly, an attacker should not be able to infer any amount of information
 Similarly, the malicious client may read the decrypted message from a received packet, or modify the sender tag, since the message will likely be shown on the screen of the client to the user. Besides this, the client should not be able to read or know any bits of either user's pad, nor negatively impact the security of future messages received by the user via non-compromised clients.
 \end{itemize}
 
-\section{Non-Goals}
+\subsection{Non-Goals}
 
 \begin{itemize}
 \item \textbf{Availability}: We do not provide any guarantees or solutions for availability of One Time Chat. Though it is very important for a chat service to have a high up-time, we did not consider it necessary to show this proof of concept in our chat system. We are certain that if an adversary, or group of adversaries, tried hard enough, they could DOS our server and deny access to users.
@@ -142,54 +153,40 @@ The SHA256-based HMAC is assumed to be a computationally hard to reverse. If thi
 
 Besides the one-time pad and SHA256-based HMAC, we do not rely on other encryption schemes. As such, we are allowed to assume that such encryption schemes are broken.
 
-\section{Design}
-We believe that much of the inconvenience of using one-time pads can be solved by generating and sharing a pad that is long enough to encrypt all messages that a user could feasibly send in his lifetime. We hypothesize that a pad on the order of 1 terabyte (TB) in size would be enough to encrypt every text message for the rest of his life:
 
-Our system requires $2\cdot |m| + 48$ bytes of pad to encrypt and securely send a message of $m$, where $|m|$ is the length of $m$ (see Section~\ref{sec:encryption}). With the (very generous) assumption that an average text message is 100 bytes (i.e. 100 characters long), if a user had a 1 TB pad, he could could send over $150000$ such texts \emph{per day} for the next 80 years.\footnote{
-Alternatively, he could choose to send up to 4 or 5 Vlad the Impaler articles per day.
-}
-
-With modern technology, this is not an unreasonable amount of storage. A cursory search online reveals that a 512 GB USB drive can be found for roughly \$20. Anyone who is genuinely concerned about security would likely be willing to spend that much or more for a lifetime guarantee of secure communication.
-
-Our design involves two users\footnote{
-``Group chat'' (i.e. chat among three or more users) functionality is a trivial extension to two-way secure chat. See Section~\ref{}. % TODO what seciton??
-}
-meeting in person and generating a pad from a local source of randomness, e.g. UNIX's \texttt{/dev/random}. We have noticed in practice that this can take a while, but the wait is well worth it, and users could certainly find ways of occupying themselves while the pad is generated. Users then (presumably securely) transfer the generated pad to their local storage device, and part ways.
-
-At this point, the users can securely communicate via their special One Time Chat clients. Since both users share the same stream of random bits, they can achieve perfect security under certain threat model assumptions, as long as they synchronize their use of the pad.
-
-\section{Encryption Scheme}
+\section{Encryption}
 \label{sec:encryption}
 
-In order to send messages Alice and Bob wrap the message up in what we call a package. A package is formatted according to the following scheme:
+In order to securely send a message from Alice to Bob, Alice's device encrypts and signs the message, resulting in what we call a package. A package is defined according to the following scheme:
 \begin{align*}
-package &\coloneqq index || p_{body} \oplus body \\
+package &\coloneqq index || (p_{body} \oplus body) \\
 body &\coloneqq ciphertext || tag \\
 ciphertext &\coloneqq p_{text} \oplus message \\
 tag &\coloneqq HMAC(p_{key},ciphertext) \\
 \end{align*}
 Lengths of the components:
 \begin{align*}
-|message| &\coloneqq |ciphertext|=|p_{text}|\\
-|body| &\coloneqq |p_{body}| \\
-|tag| &\coloneqq 32\, bytes \\
-|p_{key}| &\coloneqq 16\, bytes \\
+|message| &= |ciphertext|+|p_{text}|\\
+|body| &= |p_{body}| \\
+|tag| &= 32\, bytes \\
+|p_{key}| &= 16\, bytes \\
 \end{align*}
 
 A package is composed of an index, and a body. The index allows the user receiving the package to infer from where in the pad to construct pad segments $p_{text}, p_{body}, p_{key}$. The body is our way of encrypting a message and providing integrity to the packet. The rest of this section aims to explain why we think this scheme accomplishes our goals.  
-% NOTE: comments with "<" are TODOs of things to write about.]
-% < define terms package and unpackage.
-% < context of packaging in system.
-% < importance of packaging.
-% < warn we wrote our own crypto.
+
+Our system requires $2\cdot |message| + 48$ bytes of pad to encrypt and securely send a message (see Section~\ref{sec:encryption}). With the (very generous) assumption that an average text message is 100 bytes (i.e. 100 characters long), if a user had a 1 TB pad, he could could send over $150000$ such texts \emph{per day} for the next 80 years.\footnote{
+Alternatively, he could choose to send up to 4 or 5 Vlad the Impaler articles per day.
+}
+
+With modern technology, this is not an unreasonable amount of storage. A cursory search online reveals that a 512 GB USB drive can be found for roughly \$20. Anyone who is genuinely concerned about security would likely be willing to spend that much or more for a lifetime guarantee of secure communication.
 
 \subsection{Confidentiality}
-It is impossible to deduce the $message$ given $message \oplus p_{text}$
-as long an adversary has not obtained $p_{text}$, and it is impossible to deduce the body $body$ from $body \oplus p_{text}$. Since our threat model assumes an adversary 
+It is impossible to deduce $message$ given $message \oplus p_{text}$
+as long an adversary has not obtained $p_{text}$, and it is impossible to deduce $body$ from $body \oplus p_{text}$. Since our threat model assumes an adversary does not have access to the pad, it is impossible for an adversary to know what $message$ and $body$ are. We do not care to provide confidentiality of $index$, because without the pad this piece of information does not reveal critical information. 
 
 \subsection{Integrity}
+We argue that $body$ provides integrity of the package. Body contains ciphertext and a tag. If an adversary changed the bits corresponding to ciphertext, the tag would reflect that change. In other words, when you take they keyed HMAC of the ciphertext it will 
 
-We guarantee perfect secrecy.
 We guarantee good integrity.
 % < say more.
 
@@ -239,20 +236,42 @@ The message relay server is an untrusted server used to transfer messages betwee
 \caption{System Diagram}
 \end{figure}
 
-\subsection{Pad Storage and Structure}
-The pad data for a pair of users is stored in two files in the device's file system. Suppose two users, Alice and Bob had set up a pad to talk to each other (see ~\ref{sec:padgen} for on the generation of the pad). On Alice's device there would be two files: \texttt{alice.bob.random.store} and \texttt{alice.bob.random.metadata}. Bob would symmetrically named files. The store file stores just the randomly generated bytes of the pad. The metadata file stores information about pad usage which is necessary to correct operation and security guarantees.
+\subsection{Pad Structure and Storage}
+The pad data for a pair of users is stored in two files in the device's file system. Suppose two users, Alice and Bob, have set up a shared pad (see Section~\ref{sec:padgen} for details on pad generation) to communicate with each other. Alice's device stores two files: \texttt{alice.bob.random.store} and \texttt{alice.bob.random.metadata}; Bob has oppositely named files.
+
+The store file (\texttt{alice.bob.random.store}) stores the randomly-generated pad bits. Alice and Bob's store files are identical, i.e.
+\texttt{alice.bob.random.store == bob.alice.random.store}. Whenever pad segments are requested to help encrypt/decrypt a message, handler code stored on the device interfaces with the store files to retrieve the appropriate pad bits.
+
+The metadata file \texttt{alice.bob.random.metadata} stores certain information about the pad, the contact, and how many bits of the pad have been used for encryption and decryption:
+
+% TODO miles fill thing.y
+\begin{itemize}
+  \item[] First.
+  \item[] Second.
+\end{itemize}
+
+The reason we split the pad into two is so that messages can be sent from Alice to Bob and from Bob to Alice asyncronously: if Alice sent $m_A$ ttto Bob and Bob sent
 
 %% this is put first to differentiate between the large one-time-pad and the pad_segment
 To disambiguate between the large one-time-pad and the portion of it that is used to send packages, I will use the term $p_{segment}$ to refer to the segment of the pad that contains $p_{text}, p_{body}, p_{key}$ in contiguous memory in that respective order.  Only ${p_text}$ is of variable width, so given |body| and |tag|, a receiver only needs to know the value of index to retrieve all of $p_{segment}$.
-If Alice and Bob share a pad, that pad's contents are stored respectively in files called \texttt{Alice.Bob.store} and \texttt{Bob.Alice.store}. The meta-data for Alice and Bob's pads are stored in \texttt{Alice.Bob.metadata} and \texttt{Bob.Alice.metadata} respectively. In terms of data, both of the storage files are equal, however their metadata files are not the same. We wanted to allow asynchronous sending. However if both Alice and Bob are constructing $pad_{segment}$ from the same end of the pad, it is possible for them to send their messages with the same $pad_{segment}$. This allows Eve to intercept both messages and decrypt their contents. To solve this, we have Alice and Bob encrypt and decrypt from opposite ends of the pad. This provides the guarantee that users will never encrypt a message with the same $pad_{segment}$. The metadata files dictate the way the device will read the store files between the two pads. One of the users will have the direction in their metadata set to 1, and the other will have it set to 1. When the direction is set to 1, they will read $p_{segment}$ when encrypting from the beginning of the file in order of increasing bits, and read $p_{segment}$ when decrypting from the end of the file in order of decreasing bits. When the direction is set to -1, they will read $p_{segment}$ when encrypting from the end of the file in order of decreasing bits, and read $p_{segment}$ when decrypting from the beginning of the file on order of increasing bits.
 
-% TODO jake, did you talk about metadata somewhere?
+
+ We wanted to allow asynchronous sending. However if both Alice and Bob are constructing $pad_{segment}$ from the same end of the pad, it is possible for them to send their messages with the same $pad_{segment}$. This allows Eve to intercept both messages and decrypt their contents. To solve this, we have Alice and Bob encrypt and decrypt from opposite ends of the pad. This provides the guarantee that users will never encrypt a message with the same $pad_{segment}$. The metadata files dictate the way the device will read the store files between the two pads. One of the users will have the direction in their metadata set to 1, and the other will have it set to 1. When the direction is set to 1, they will read $p_{segment}$ when encrypting from the beginning of the file in order of increasing bits, and read $p_{segment}$ when decrypting from the end of the file in order of decreasing bits. When the direction is set to -1, they will read $p_{segment}$ when encrypting from the end of the file in order of decreasing bits, and read $p_{segment}$ when decrypting from the beginning of the file on order of increasing bits.
 
 
 \subsection{Pad Generation}
+% TODO write
+\label{sec:padgen}
+% TODO mention the use of the HPRPNNGNG?
+% TODO mention urandom for development but NOT for real life
+\begin{figure}[htp]
+\centering
+\includegraphics[width=3in]{generate}
+\caption{Generating A Pad}
+\end{figure}
 
 
-\subsection{Pad Device}
+\subsection{Device (Pad Device)}
 The pad device is a device dedicated to storing and mediating access to the one time pad data for a user and their contacts. Each user has one device which they are responsible for keeping safe. A user initializes their device with a shared pad for each contact they wish to communicate with.
 
 Ideally, a Raspberry Pi would be used to run the device code and connect to the client computer through an ethernet cable. We got that to work for a little while. But we have had so much trouble with that we chose to run device software on the same computer as the client software. This eliminates the security benefits of having a dedicated device, but the code is still implemented in such a way that it is easy to run it on a separate device. For the analysis, we assume that this part is working.
@@ -315,6 +334,7 @@ to display a warning).
 \includegraphics[width=3in]{sample}
 \caption{Example Client Use}
 \end{figure}
+\label{sec:clientexample}
 
 This log exists on the device and is inaccessible from outside.
 The hope is that this log could provide some help in forensics
@@ -369,16 +389,6 @@ Each message is assigned a ref number which clients keep track of in order
 to fetch only messages they have not seen before from the server.
 The latest ref is fetched from the server each time the client starts.
 
-
-\label{sec:padgen}
-% TODO write
-% TODO mention the use of the HPRPNNGNG?
-% TODO mention urandom for development but NOT for real life
-\begin{figure}[htp]
-\centering
-\includegraphics[width=3in]{generate}
-\caption{Generating A Pad}
-\end{figure}
 
 
 \section{Conclusion}
