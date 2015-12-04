@@ -18,6 +18,10 @@ import confirm
 import logging
 
 if __name__ == "__main__":
+    logging.basicConfig(filename='device.log', 
+                        level=logging.INFO,
+                        format='%(asctime)s [%(levelname)s] %(message)s')
+
     arguments = docopt(__doc__)
     port = arguments["<port>"]
     port = int(port) if port else 9051
@@ -41,4 +45,4 @@ if __name__ == "__main__":
     print "Shutting down."
     if csc:
         csc.shutdown()
-
+    logging.shutdown()
