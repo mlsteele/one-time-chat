@@ -161,7 +161,7 @@ class OTC_Client(object):
                     print "Message sent."
                 else:
                     print "Error: Failed to send message."
-            elif command == "gs":
+            elif command == "ms":
                 recipients = user_input[1].split(",")
                 message = " ".join(user_input[2:])
                 for recipient in recipients:
