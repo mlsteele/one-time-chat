@@ -27,6 +27,10 @@ def package(src_uid, dst_uid, message):
     """
     # TODO verify bit release with user
     message = message.encode("utf-8")
+    if not csc.yn_prompt("Are you sure you want to release pad bits?"):
+        return {"success":False,
+                "error": "user rejected pad read request"
+        }
     (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
     (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
     (p_tag_key, _)  = read.read_encrypt_pad(src_uid, dst_uid, crypto.TAG_KEY_LENGTH)
@@ -52,6 +56,10 @@ def unpackage(src_uid, dst_uid, package_b64):
     # b64 decode the package for decryption.
     package = base64.b64decode(package_b64)
 
+    if not csc.yn_prompt("Are you sure you want to release pad bits?"):
+        return {"success":False,
+                "error": "user rejected pad read request"
+        }
     try:
         pre = crypto.pre_unpackage(package, verbose=True)
     except crypto.CryptoError:
