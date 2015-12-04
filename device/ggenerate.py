@@ -51,26 +51,6 @@ def make_random_blob(fs, uids, gid, n_bytes, rservice):
        n_bytes: Size in bytes of the target
        rservice: random or urandom
     """
-    
-    # Makes one pad. Called later on.
-    def make_one_pad(uid, f):
-        # Will store # of bytes generated
-        n = 0
-        while(True):
-            with open("/dev/" + rservice, "rb") as rand:
-                nbytes2write = KiB if n_bytes - n >= KiB else n_bytes - n
-                randobytes = rand.read(nbytes2write)
-                f.write(randobytes)
-                n += nbytes2write
-                log("Wrote kilobyte chunk {}/{}"
-                    .format(n/KiB,(n_bytes+KiB-1)/KiB), 2, n%KiB==0)
-                log("Wrote final {} bytes"
-                    .format(nbytes2write), 2, n%KiB!=0)
-                log("Wrote megabyte chunk {}/{}"
-                    .format(n/MiB,(n_bytes+MiB-1)/MiB), 0, n%MiB==0)
-                if n >= n_bytes:
-                    break
-
     assert len(fs) == len(uids)
     if len(fs) < 2:
         raise ValueError("You need at least three people for a group!")
@@ -96,8 +76,22 @@ def make_random_blob(fs, uids, gid, n_bytes, rservice):
 
     # Time and execute random generation
     t1 = time.time()
-    for i in range(len(uids)):
-        make_one_pad(uids[i], fs[i])
+    # Will store # of bytes generated
+    n = 0
+    while(True):
+        with open("/dev/" + rservice, "rb") as rand:
+            nbytes2write = KiB if n_bytes - n >= KiB else n_bytes - n
+            randobytes = rand.read(nbytes2write)
+            map(lambda f: f.write(randobytes), fs)
+            n += nbytes2write
+            log("Wrote kilobyte chunk {}/{}"
+                .format(n/KiB,(n_bytes+KiB-1)/KiB), 2, n%KiB==0)
+            log("Wrote final {} bytes"
+                .format(nbytes2write), 2, n%KiB!=0)
+            log("Wrote megabyte chunk {}/{}"
+                .format(n/MiB,(n_bytes+MiB-1)/MiB), 0, n%MiB==0)
+            if n >= n_bytes:
+                break
     t2 = time.time()
 
     log()
@@ -113,10 +107,10 @@ def make_random_blob(fs, uids, gid, n_bytes, rservice):
     for f in fs:
         log("\t{}".format(f.name))
 
-#    make_metadata(uid0, uid1, n_bytes, rservice)
+    make_metadata(uids, gid, n_bytes, rservice)
 
 
-def make_metadata(uid0, uid1, n_bytes, rservice):
+def make_metadata(uids, gid, n_bytes, rservice):
     def make_data(uid, rid, direction):
         assert direction in [1,-1]
         data = {}

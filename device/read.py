@@ -53,8 +53,7 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
         rightInclusive = endIndex-1 if d == -1 else decrypt_index
         store.seek(leftInclusive)
         pad_out = store.read(rightInclusive - leftInclusive + 1)[::-d]
-        next_decrypt_index = endIndex - d
-        return (pad_out, next_decrypt_index)
+        return (pad_out, endIndex)
 
 # Returns (pad, index) 
 def read_encrypt_pad(uid, rid, mlen):
