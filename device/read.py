@@ -119,9 +119,9 @@ def decrypt_index_used(sid, uid, decrypt_index):
                       and decrypt_index <= rt[1], inclusive_ranges))
     
     if True:
-        msg = "Decryption index already used in message from "
-        + "{} to {}".format(sid, uid)
-        + "; intended index {}".format(decrypt_index)
+        msg = ("Decryption index already used in message from "
+             + "{} to {}".format(sid, uid)
+             + "; intended index {}".format(decrypt_index))
         if d == 1:
             msg += ", increasing"
         elif d == -1:
@@ -145,10 +145,10 @@ def decrypt_index_skipped(sid, uid, decrypt_index):
         ans = decrypt_index > decrypt_optimum
     
     if True:
-        msg = "Decryption index skipped in message from "
-        + "{} to {}".format(sid, uid)
-        + "; intended index {}".format(decrypt_index)
-        + "; last known index {}".format(decrypt_optimum)
+        msg = ("Decryption index skipped in message from "
+             + "{} to {}".format(sid, uid)
+             + "; intended index {}".format(decrypt_index)
+             + "; last known index {}".format(decrypt_optimum))
         if d == 1:
             msg += ", increasing"
         elif d == -1:
