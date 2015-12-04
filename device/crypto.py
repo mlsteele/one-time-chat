@@ -237,8 +237,7 @@ def compare_digest(digest1, digest2):
     The fallback in our case is ok because the input
     to the hmac is encrypted anyway.
     """
-    hmac_compare_digest = getattr(hmac, "compare_digest")
-    if hmac_compare_digest:
-        return hmac_compare_digest(digest1, digest2)
+    if hasattr(hmac, "compare_digest"):
+        return hmac.compare_digest(digest1, digest2)
     else:
         return digest1 == digest2
