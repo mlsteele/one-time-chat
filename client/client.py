@@ -59,8 +59,12 @@ class OTC_Client(object):
 
     def send_secure(self, target, message_plaintext):
         try:
-            package = self.package(target, message_plaintext)
-            self.send_plaintext(target, package)
+            res = self.rpc_client.package(self.user_id, target, message_plaintext)
+            if not res.get("success"):
+                error = res.get("error")
+                print "Failed to create message for '{}' ({})".format(target, error)
+                return False
+            self.send_plaintext(target, res["package"])
             return True
         except rpcclient.RpcException as ex:
             print ex
@@ -78,7 +82,6 @@ class OTC_Client(object):
         """Get the next ref for a recipient.
         This is the smallest ref number which has not yet been seen by the server.
         """
-        # TODO it might better if this came from the device instead.
         payload = {
             "recipient_uid": self.user_id,
         }
