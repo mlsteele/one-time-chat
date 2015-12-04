@@ -35,7 +35,8 @@ class OTC_Client(object):
 
         self.connect()
         self.nextref = self.get_next_ref()  # first unread ref
-        self.friends = {}
+        # a map from groups to users in that group
+        self.groups = {}
         self.rpc_client = rpcclient.RpcClient(self.device_address)
 
     def send_plaintext(self, target, message):
@@ -144,7 +145,9 @@ class OTC_Client(object):
             if ( command == "help"):
                 print "=== help ==="
                 print "to send type send [target] [message]"
-                print "to send to many users type gsend [user1],[user2],...,[userN] [message]"
+                print "to send to many users type ms [user1],[user2],...,[userN] [message]"
+                print "to send to a group type gs groupname message"
+                print "to create a group type group groupname [user1] [user2] ... [userN]"
                 print "to recieve messages press enter."
                 print "to see your user id type id."
                 print "to clear the screen type clear."
@@ -169,6 +172,18 @@ class OTC_Client(object):
                         print "Message sent."
                     else:
                         print "Error: Failed to send message."
+            elif command == "gs":
+                message = " ".join(user_input[2:])
+                for recipient in self.groups[user_input[1]]:
+                    if recipient == self.user_id:
+                        continue
+                    success = self.send_secure(recipient, message)
+                    if success:
+                        print "Message sent."
+                    else:
+                        print "Error: Failed to send message."
+            elif command == "group":
+                self.groups[groupname] = user_input[2:]
             elif command == "id":
                 print "User ID:", self.user_id
             elif command == "clear":
