@@ -183,7 +183,7 @@ class OTC_Client(object):
                     else:
                         print "Error: Failed to send message."
             elif command == "group":
-                self.groups[groupname] = user_input[2:]
+                self.groups[user_input[1]] = user_input[2:]
             elif command == "id":
                 print "User ID:", self.user_id
             elif command == "clear":
