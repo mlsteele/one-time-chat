@@ -136,6 +136,7 @@ class OTC_Client(object):
             if ( command == "help"):
                 print "=== help ==="
                 print "to send type send [target] [message]"
+                print "to send to many users type gsend [user1],[user2],...,[userN] [message]"
                 print "to recieve messages press enter."
                 print "to see your user id type id."
                 print "to clear the screen type clear."
@@ -149,6 +150,15 @@ class OTC_Client(object):
                     print "Message sent."
                 else:
                     print "Error: Failed to send message."
+            elif command == "gs":
+                recipients = user_input[1].split(",")
+                message = " ".join(user_input[2:])
+                for recipient in recipients:
+                    success = self.send_secure(recipient, message)
+                    if success:
+                        print "Message sent."
+                    else:
+                        print "Error: Failed to send message."
             elif command == "id":
                 print "User ID:", self.user_id
             elif command == "clear":
