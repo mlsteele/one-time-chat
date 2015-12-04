@@ -2,6 +2,8 @@ import json
 
 METADATA_STEM = ".random.metadata"
 STOREFILE_STEM = ".random.store"
+
+# Not yet implemented
 GROUP_STEM = ".g"
 
 def get_storefile_name(uid, rid):
@@ -10,9 +12,11 @@ def get_storefile_name(uid, rid):
 def get_metadatafile_name(uid, rid):
     return "{}.{}{}".format(uid, rid, METADATA_STEM)
 
+# Not yet implemented
 def get_gstorefile_name(uid, gid):
     return "{}.{}{}{}".format(uid, gid, GROUP_STEM, STOREFILE_STEM)
 
+# Not yet implemented
 def get_gmetadatafile_name(uid, gid):
     return "{}.{}{}{}".format(uid, gid, GROUP_STEM, METADATA_STEM)
 
