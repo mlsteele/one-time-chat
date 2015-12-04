@@ -123,7 +123,7 @@ def decrypt_index_used(sid, uid, decrypt_index):
 
 # True if this decrypt index requested has skipped over
 #  a portion of the pad
-def decrypt_index_skipped(sid, uid, decrypt_index, history=-1):
+def decrypt_index_skipped(sid, uid, decrypt_index):
     metadataFile = get_metadatafile_name(uid, sid)
     metadata = read_metadata(metadataFile)
     
