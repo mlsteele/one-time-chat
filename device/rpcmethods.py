@@ -5,6 +5,7 @@ import json
 import base64
 import traceback
 import logging
+import metadata
 
 """
 All methods that are RPCs should go here.
@@ -33,9 +34,15 @@ def package(src_uid, dst_uid, message):
             "error": "user rejected pad read request",
         }
 
-    (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
-    (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
-    (p_tag_key, _)  = read.read_encrypt_pad(src_uid, dst_uid, crypto.TAG_KEY_LENGTH)
+    try:
+        (p_text, index) = read.read_encrypt_pad(src_uid, dst_uid, len(message))
+        (p_body, _)     = read.read_encrypt_pad(src_uid, dst_uid, len(message) + crypto.TAG_LENGTH)
+        (p_tag_key, _)  = read.read_encrypt_pad(src_uid, dst_uid, crypto.TAG_KEY_LENGTH)
+    except metadata.NoMetadataException:
+        return {
+            "success": False,
+            "error": "Shared pad not found.",
+        }
 
     try:
         package = crypto.package(index, message, p_text, p_body, p_tag_key, verbose=True)
@@ -73,13 +80,22 @@ def unpackage(src_uid, dst_uid, package_b64):
     message_length = pre["message_length"]
     p_text_index = pre["p_text_index"]
 
-    skip_detected = read.decrypt_index_skipped(src_uid, dst_uid, p_text_index)
-    reuse_detected = read.decrypt_index_used(src_uid, dst_uid, p_text_index)
+    try:
+        skip_detected = read.decrypt_index_skipped(src_uid, dst_uid, p_text_index)
+        reuse_detected = read.decrypt_index_used(src_uid, dst_uid, p_text_index)
 
-    start_index = next_index = p_text_index
-    (p_text, next_index) = read.read_decrypt_pad(src_uid, dst_uid, next_index, message_length)
-    (p_body, next_index) = read.read_decrypt_pad(src_uid, dst_uid, next_index, message_length + crypto.TAG_LENGTH)
-    (p_tag_key, _)       = read.read_decrypt_pad(src_uid, dst_uid, next_index, crypto.TAG_KEY_LENGTH)
+        start_index = next_index = p_text_index
+        (p_text, next_index) = read.read_decrypt_pad(src_uid, dst_uid,
+                                                     next_index, message_length)
+        (p_body, next_index) = read.read_decrypt_pad(src_uid, dst_uid,
+                                                     next_index, message_length + crypto.TAG_LENGTH)
+        (p_tag_key, _)       = read.read_decrypt_pad(src_uid, dst_uid,
+                                                     next_index, crypto.TAG_KEY_LENGTH)
+    except metadata.NoMetadataException:
+        return {
+            "success": False,
+            "error": "Shared pad not found.",
+        }
 
     try:
         message = crypto.unpackage(package, p_text, p_body, p_tag_key, verbose=True)
