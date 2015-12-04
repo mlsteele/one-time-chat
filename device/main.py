@@ -15,7 +15,6 @@ from docopt import docopt
 import rpcserver
 import rpcmethods
 import confirm
-import otc_log
 import logging
 
 if __name__ == "__main__":

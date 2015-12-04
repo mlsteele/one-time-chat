@@ -26,7 +26,6 @@ import hashlib
 import os
 import time
 import json
-import otc_log
 import logging
 
 KiB = 1024;
@@ -136,7 +135,6 @@ def make_metadata(uid0, uid1, n_bytes, rservice):
 
 # d: 0 = production, 1 = status messages, 2 = full debug
 def log(msg=-1, d=0, condition=True):
-
     if DEBUG >= d and condition:
         if msg == -1:
             print("")
@@ -144,17 +142,20 @@ def log(msg=-1, d=0, condition=True):
         header = "[]"
         if d == 0:
             header = "[INFO]"
-            logger.info(msg)
+            logging.info(msg)
         elif d == 1:
             header = "[STATUS]"
-            logger.info(msg)
+            logging.info(msg)
         elif d == 2:
             header = "[DEBUG]"
-            logger.debug(msg)
+            logging.debug(msg)
         print(header + " " + msg)
 
 if __name__ == "__main__":
-    logger = otc_log.start("generate")
+    logging.basicConfig(filename='generate.log', 
+                        level=logging.INFO,
+                        format='%(asctime)s [%(levelname)s] %(message)s')
+
     args = docopt(__doc__)
     
     uid0 = args["UID1"]
@@ -189,3 +190,4 @@ if __name__ == "__main__":
     with open(filepath1, "wb") as f1, open(filepath2, 'wb') as f2:
         make_random_blob(f1, f2, uid0, uid1, n_bytes, rservice)
 
+    logging.shutdown()
