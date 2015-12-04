@@ -32,11 +32,7 @@ def read_decrypt_pad(sid, uid, decrypt_index, clen):
             assert endIndex >= metadata["split_index"]
         if d == -1:
             assert endIndex < metadata["split_index"]
-        
 
-        print("Decrypt index skipped: {}\nDecrypt index used: {}\n".
-              format(decrypt_index_skipped(sid, uid, decrypt_index),
-                     decrypt_index_used(sid, uid, decrypt_index)))
         with open(metadataFile, "w") as mfile:
             updates = {"decrypt_log":
                        "{}{}-{},".format(metadata["decrypt_log"],

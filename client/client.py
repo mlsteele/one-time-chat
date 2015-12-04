@@ -111,6 +111,9 @@ class OTC_Client(object):
                 "error": "unknown rpc error",
             }
 
+        if res.get("skip_detected"):
+            print "WARNING: Possible skip detected. Server may be maliciously dropping packets."
+
         if res["success"]:
             print from_uid + ": " + res["message"]
         else:

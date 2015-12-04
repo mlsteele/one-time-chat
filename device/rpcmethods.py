@@ -64,6 +64,8 @@ def unpackage(src_uid, dst_uid, package_b64):
     message_length = pre["message_length"]
     p_text_index = pre["p_text_index"]
 
+    skip_detected = read.decrypt_index_skipped(src_uid, dst_uid, p_text_index)
+
     next_index = p_text_index
     (p_text, next_index) = read.read_decrypt_pad(src_uid, dst_uid, next_index, message_length)
     (p_body, next_index) = read.read_decrypt_pad(src_uid, dst_uid, next_index, message_length + crypto.TAG_LENGTH)
@@ -72,14 +74,15 @@ def unpackage(src_uid, dst_uid, package_b64):
     try:
         message = crypto.unpackage(package, p_text, p_body, p_tag_key, verbose=True)
         return {
-            "success" : True,
-            "message" : message,
+            "success": True,
+            "message": message,
+            "skip_detected": skip_detected,
         }
     except crypto.CryptoError:
         traceback.print_exc()
         return {
-            "success" : False,
-            "error": "Decryption failed.",
+            "success": False,
+            "error":"Decryption failed.",
         }
 
 # Returns UID of this device
