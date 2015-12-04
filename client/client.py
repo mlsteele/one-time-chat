@@ -103,7 +103,14 @@ class OTC_Client(object):
         return res.json()
 
     def show_package(self, from_uid, package):
-        res = self.rpc_client.unpackage(from_uid, self.user_id, package)
+        try:
+            res = self.rpc_client.unpackage(from_uid, self.user_id, package)
+        except:
+            res = {
+                "success": False,
+                "error": "unknown rpc error",
+            }
+
         if res["success"]:
             print from_uid + ": " + res["message"]
         else:
