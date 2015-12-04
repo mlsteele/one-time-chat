@@ -116,6 +116,8 @@ class OTC_Client(object):
 
         if res.get("skip_detected"):
             print "WARNING: Possible skip detected. Server may be maliciously dropping packets."
+        if res.get("reuse_detected"):
+            print "WARNING: Possible reuse detected. An attacker may be injecting packets."
 
         if res["success"]:
             print from_uid + ": " + res["message"]

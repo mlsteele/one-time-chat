@@ -73,6 +73,7 @@ def unpackage(src_uid, dst_uid, package_b64):
     p_text_index = pre["p_text_index"]
 
     skip_detected = read.decrypt_index_skipped(src_uid, dst_uid, p_text_index)
+    reuse_detected = read.decrypt_index_used(src_uid, dst_uid, p_text_index)
 
     next_index = p_text_index
     (p_text, next_index) = read.read_decrypt_pad(src_uid, dst_uid, next_index, message_length)
@@ -85,6 +86,7 @@ def unpackage(src_uid, dst_uid, package_b64):
             "success": True,
             "message": message,
             "skip_detected": skip_detected,
+            "reuse_detected": reuse_detected,
         }
     except crypto.CryptoError:
         traceback.print_exc()
