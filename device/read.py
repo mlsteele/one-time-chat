@@ -118,7 +118,7 @@ def decrypt_index_used(sid, uid, decrypt_index):
         ans = any(map(lambda rt: rt[0] <= decrypt_index
                       and decrypt_index <= rt[1], inclusive_ranges))
     
-    if ans:
+    if True:
         msg = "Decryption index already used in message from "
         + "{} to {}".format(sid, uid)
         + "; intended index {}".format(decrypt_index)
@@ -128,6 +128,9 @@ def decrypt_index_used(sid, uid, decrypt_index):
             msg += ", decreasing"
         msg += ". Possible sign of replay or tampering."
         logging.warning(msg)
+
+    return ans
+
 # True if this decrypt index requested has skipped over
 #  a portion of the pad
 def decrypt_index_skipped(sid, uid, decrypt_index):
@@ -141,7 +144,7 @@ def decrypt_index_skipped(sid, uid, decrypt_index):
     if d == -1:
         ans = decrypt_index > decrypt_optimum
     
-    if ans:
+    if True:
         msg = "Decryption index skipped in message from "
         + "{} to {}".format(sid, uid)
         + "; intended index {}".format(decrypt_index)
@@ -152,6 +155,8 @@ def decrypt_index_skipped(sid, uid, decrypt_index):
             msg += ", decreasing"
         msg += ". Possible sign of a maliciously dropped packet."
         logging.warning(msg)
+    
+    return ans
 
 # Returns UID of this device
 def whoami(override_true_id=None):
