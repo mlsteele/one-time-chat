@@ -2,6 +2,9 @@
 One time pad based communication.
 6.858 Final Project by Jake Barnwell, Andres Perez, Miles Steele
 
+For the project report see 
+[docs/more_words.md](docs/more_words.md)
+
 # Security Warning
 
 This is a class project including homebaked crypto.
