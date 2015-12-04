@@ -154,6 +154,8 @@ class OTC_Client(object):
                 recipients = user_input[1].split(",")
                 message = " ".join(user_input[2:])
                 for recipient in recipients:
+                    if recipient == self.user_id:
+                        continue
                     success = self.send_secure(recipient, message)
                     if success:
                         print "Message sent."
