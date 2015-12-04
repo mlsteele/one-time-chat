@@ -185,7 +185,8 @@ It is impossible to deduce $message$ given $message \oplus p_{text}$
 as long an adversary has not obtained $p_{text}$, and it is impossible to deduce $body$ from $body \oplus p_{text}$. Since our threat model assumes an adversary does not have access to the pad, it is impossible for an adversary to know what $message$ and $body$ are. We do not care to provide confidentiality of $index$, because without the pad this piece of information does not reveal critical information. 
 
 \subsection{Integrity}
-We argue that $body$ provides integrity of the package. Body contains ciphertext and a tag. If an adversary changed the bits corresponding to ciphertext, the tag would reflect that change. In other words, when you take they keyed HMAC of the ciphertext it will 
+We argue that $body$ provides integrity of the package. An adversary knows where in $package$ $ciphertext$ lies (though they don't know what $ciphertext$ is since it is encrypted with part of $p_{body}$). Since one-time encryption is malleable, adversaries know that flipping bits in $ciphertext$ will flip bits in $message$. However, if an adversary doesn't change $tag$, then with high probability the user would be able to tell that $ciphertext$ has been changed.
+If an adversary changed the bits corresponding to $ciphertext$, the tag would reflect that change. In other words, when users take they keyed HMAC of the modified $ciphertext$, with high probability it won't equal the  
 
 We guarantee good integrity.
 % < say more.
@@ -244,24 +245,47 @@ The store file (\texttt{alice.bob.random.store}) stores the randomly-generated p
 
 The metadata file \texttt{alice.bob.random.metadata} stores certain information about the pad, the contact, and how many bits of the pad have been used for encryption and decryption:
 
-% TODO miles fill thing.y
-\begin{itemize}
-  \item[] First.
-  \item[] Second.
+\begin{itemize} \itemsep0em 
+  \item[] \textbf{uid} User ID of user
+  \item[] \textbf{rid} User ID of contact
+  \item[] \textbf{store\_filename} Filename of the random store
+  \item[] \textbf{metadata\_filename} Filename of this metadata file
+  \item[] \textbf{n\_bytes} Total number of shared pad bytes
+  \item[] \textbf{rservice} Service used to generate the bytes (\texttt{random} or \texttt{urandom}). In practice this should always be \texttt{random}.
+  \item[] \textbf{split\_index} Index dividing the two halves of the pad
+  \item[] \textbf{direction} Direction of encryption (1 means encrypt starting at index 0 and moving forward, means encrypt starting at index \texttt{n\_bytes - 1} and moving backwards).
+  \item[] \textbf{encrypt\_index} Index of pad to start encrypting from the next time a pad segment is requested
+  \item[] \textbf{decrypt\_log} A log of all decryption requests the device has seen; each decryption request is of the form \texttt{i-j} which signifies that pad segment from $i$ to $j$ was requested to decrypt.
+  \item[] \textbf{decrypt\_max} Maximum index for a pad segment that has been requested for a decryption. Note that if direction is 1, you \emph{decrypt} backwards (since your contact has direction -1), this is actually a minimum.
+  \item[] \textbf{n\_eles} Number of fields in this metadata, including this one.
+  \item[] \textbf{checksum} Hash to help ensure the metadata wasn't accidentally modified. Not intended to protect against a malicious adversary.
 \end{itemize}
 
-The reason we split the pad into two is so that messages can be sent from Alice to Bob and from Bob to Alice asyncronously: if Alice sent $m_A$ ttto Bob and Bob sent
+The reason we split the pad into two is so that messages can be sent from Alice to Bob and from Bob to Alice asynchronously: if Alice sent $m_A$ with index $i_A$ to Bob, while at the same time Bob sent message $m_B$ to Alice with index $i_B$, then if both users were reading from the same portion of the pad, there could be interference: both could, for example, try to use the same portion of the pad to encrypt, which breaks the security of a one-time pad. By splitting up the pad, each user has a dedicated set of bits to send (encrypt) from, and the recipient knows where in the pad to decrypt from when they see an incoming message from the sender.
 
-%% this is put first to differentiate between the large one-time-pad and the pad_segment
-To disambiguate between the large one-time-pad and the portion of it that is used to send packages, I will use the term $p_{segment}$ to refer to the segment of the pad that contains $p_{text}, p_{body}, p_{key}$ in contiguous memory in that respective order.  Only ${p_text}$ is of variable width, so given |body| and |tag|, a receiver only needs to know the value of index to retrieve all of $p_{segment}$.
+Alice encrypts from index 0 moving forward in the top half of the pad (delimiter stored by the \texttt{split\_index} field), and Bob encrypts from index \texttt{n\_bytes - 1} moving backward in the bottom half the pad (see Figure \ref{fig:padsplit}). Similarly, when Alice decrypts a message (from Bob), she reads Bob's half of the pad, in reverse; and when Bob decrypts a message, he reads Alice's half of the pad in the forward direction.
 
+\begin{figure}[htp]
+\centering
+\includegraphics[width=1.5in]{padsplit}
+\caption{Pad Layout}
+\label{fig:padsplit}
+\end{figure}
 
- We wanted to allow asynchronous sending. However if both Alice and Bob are constructing $pad_{segment}$ from the same end of the pad, it is possible for them to send their messages with the same $pad_{segment}$. This allows Eve to intercept both messages and decrypt their contents. To solve this, we have Alice and Bob encrypt and decrypt from opposite ends of the pad. This provides the guarantee that users will never encrypt a message with the same $pad_{segment}$. The metadata files dictate the way the device will read the store files between the two pads. One of the users will have the direction in their metadata set to 1, and the other will have it set to 1. When the direction is set to 1, they will read $p_{segment}$ when encrypting from the beginning of the file in order of increasing bits, and read $p_{segment}$ when decrypting from the end of the file in order of decreasing bits. When the direction is set to -1, they will read $p_{segment}$ when encrypting from the end of the file in order of decreasing bits, and read $p_{segment}$ when decrypting from the beginning of the file on order of increasing bits.
+The reason we have the encryption directions moving in opposite directions towards the center of the pad is so that the \texttt{split\_index} can be appropriately modified if, for example, Bob has run out of encryption pad but Alice still has half of hers. However, this feature has not been implemented in the current version.
 
+Obviously, Bob's and Alice's metadata files differ. Each keeps track of messages it has been asked to decrypt, as well as what is the next index of the pad it should use to encrypt.
+
+For example, if Alice has just received a new pad and has requested a pad segment of length 10, the device checks the direction and encrypt index of her metadata (sees that they are 1 and 0, respectively), and returns \texttt{pad[0:10]}, and then updates the encrypt index to 10 so it knows where to start the next time.
+
+When Bob receives the encrypted message (also included is the requested \texttt{index}, i.e. a decryption index), he checks his metadata file to see what direction and which half the pad to look at, and then requests the pad segment \texttt{pad[decrypt\_index:decrypt\_index+len(msg)]}. The range of indices is stored into the \texttt{decrypt\_log}, and \texttt{decrypt\_max} is updated.
+
+The decryption log and max indexes are stored to help detect dropped packets and replay attacks.
 
 \subsection{Pad Generation}
-% TODO write
 \label{sec:padgen}
+We use the \texttt{/dev/random} service to generate the random bits of our pads. Because \texttt{random} tries to generate bits based on stored entropy, it often blocks while waiting for more entropy, making it very slow to generate more than a few hundred bytes of data. To remedy this situation, we have purchased a hardware RNG (HRNG) device, a USB stick that fee
+In practice, any reasonable rrrrHRNG device should suffice to generate the random bits.
 % TODO mention the use of the HPRPNNGNG?
 % TODO mention urandom for development but NOT for real life
 \begin{figure}[htp]
@@ -343,6 +367,7 @@ and damage analysis in the event of a known compromise.
 
 \subsection{Chat Client}
 % TODO write
+The chat client presents a command line interface for sending and
  for users to send and receive messages.
 
 
