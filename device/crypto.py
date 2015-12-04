@@ -15,6 +15,8 @@ TAG_KEY_LENGTH = 16
 class CryptoError(Exception):
     pass
 
+class IntegrityError(CryptoError):
+    pass
 
 def package(index, message, p_text, p_body, p_tag_key, verbose=False):
     """
@@ -144,7 +146,7 @@ def unpackage(package, p_text, p_body, p_tag_key, verbose=False):
         message = xor(ciphertext, p_text)
         return message
     else:
-        raise CryptoError("Integrity Error") 
+        raise IntegrityError("Integrity check failed.")
 
 def pre_unpackage(package, verbose=False):
     """Extract what information is necessary to fetch before unpackaging.
