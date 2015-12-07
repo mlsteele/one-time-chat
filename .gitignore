@@ -2,7 +2,8 @@
 *.store
 *.metadata
 *.*~
-server/database.db
-/tags
 *.python-version
 *.log
+*.json
+server/database.db
+/tags
