@@ -5,12 +5,14 @@ OTC Chat Client.
 Usage:
   server.py [<port>]
 """
+import string
+import random
+import base64
 from docopt import docopt
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.autodoc import Autodoc
 import wtforms
-import base64
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
@@ -81,7 +83,7 @@ def home():
 @auto.doc()
 def check():
     """Check that the server is up.
-    
+
     Returns {"status": "ok"}
     """
     resdict = {
@@ -100,12 +102,12 @@ def send():
     """
     Send a message to a user.
     Places the message in that users's mailbox.
-    
+
     Takes a POST form:
     - recipient_uid: Who the message is for.
     - sender_uid: Who is sending the message.
     - contents: The contents of the message.
-    
+
     Returns json with keys:
     - received: true
     - echo_tail: The last 10 bytes of the received message (for debugging).
@@ -146,7 +148,7 @@ def getmessages():
     """
     Get all messages destined for a certain user.
     Only returns messages starting at a certain message reference number.
-    
+
     Takes GET query parameters:
     - recipient_uid: Who the messages are for.
     - start_ref: The first ref to receive (inclusive, minimum 0).
@@ -228,6 +230,46 @@ def getnextref():
     }
     return jsonify(resdict)
 
+@app.route('/mischief', methods=["GET", "POST"])
+@auto.doc()
+def mischief():
+    """
+    Controls for attackers to enact mischief.
+    """
+    if request.method != "POST":
+        return redirect(url_for('static', filename='mischief.html'))
+
+    userid = request.form.get("userid")
+    kind = request.form.get("kind")
+    print "MISCHIEF {} {}".format(kind, userid)
+
+    if kind == "drop":
+        messages = (db.session.query(Message)
+                    .filter(Message.recipient_uid == userid)
+                    .order_by(Message.ref.desc())
+                    .limit(1).all())
+        db.session.delete(messages[0])
+        db.session.commit()
+    elif kind == "corrupt":
+        messages = (db.session.query(Message)
+                    .filter(Message.recipient_uid == userid)
+                    .order_by(Message.ref.desc())
+                    .limit(1).all())
+        messages[0].contents = corrupt_string(messages[0].contents)
+        db.session.commit()
+
+    return redirect(url_for('static', filename='mischief.html'))
+
+def corrupt_string(s):
+    """Change one random character of a string."""
+    index = random.randint(0, len(s)-1)
+    choices = set(string.letters) - set(s[index])
+    corrupted = (s[:index]
+                 + random.choice(tuple(choices))
+                 + s[index+1:])
+    assert len(s) == len(corrupted)
+    return corrupted
+
 if __name__ == "__main__":
     arguments = docopt(__doc__)
     port = arguments["<port>"]
@@ -235,4 +277,4 @@ if __name__ == "__main__":
 
     print "OTC Server starting..."
     print "Server port:", port
-    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=True)
