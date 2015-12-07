@@ -34,10 +34,10 @@ class OTC_Client(object):
         print "User ID:", self.user_id
 
         self.connect()
-        self.nextref = self.get_next_ref()  # first unread ref
         # a map from groups to users in that group
         self.groups = {}
         self.rpc_client = rpcclient.RpcClient(self.device_address)
+        self.nextref = self.get_next_ref()  # first unread ref
 
     def send_plaintext(self, target, message):
         payload = {
@@ -80,7 +80,8 @@ class OTC_Client(object):
             raise ClientException("Could not connect to server.", ex)
 
     def get_next_ref(self):
-        """Get the next ref for a recipient.
+        """
+        Get the next ref for a recipient from the device.
         This is the smallest ref number which has not yet been seen by the server.
         """
         payload = {
@@ -89,9 +90,21 @@ class OTC_Client(object):
         try:
             res = requests.get(self.server_address + "/getnextref", params=payload)
             res.raise_for_status()
+            server_nextref = res.json()["nextref"]
         except RequestException as ex:
-            raise ClientException("Could not get next ref from server.", ex)
-        return res.json()["nextref"]
+            print "Could not get next ref from server.", ex
+            server_nextref = None
+
+        device_nextref = self.rpc_client.get_next_ref(self.user_id, self.server_address)
+
+        if server_nextref == None:
+            return device_nextref
+        else:
+            return min(server_nextref, device_nextref)
+
+    def save_next_ref(self):
+        """Save the next ref setting to the device."""
+        self.rpc_client.save_next_ref(self.user_id, self.server_address, self.nextref)
 
     def get_messages(self, start_ref):
         """Get all messages starting at start_ref."""
@@ -139,6 +152,7 @@ class OTC_Client(object):
                 messages = response[u'messages']
                 for message in messages:
                     self.nextref = message['ref'] + 1
+                    self.save_next_ref()
                     self.show_package(message['sender_uid'], message['contents'])
                 continue
             command = user_input[0]

@@ -6,6 +6,7 @@ import base64
 import traceback
 import logging
 import metadata
+from jsonstore import JsonStore
 
 """
 All methods that are RPCs should go here.
@@ -14,9 +15,8 @@ All methods that are RPCs should go here.
 ALLOW_LIST = [
     "package",
     "unpackage",
-    # "whoami",
-    # "test_prompt",
-    # "teapot",
+    "get_next_ref",
+    "save_next_ref",
 ]
 
 # Confirm controller handle.
@@ -27,11 +27,17 @@ def package(src_uid, dst_uid, message):
     Message is plaintext.
     Package it up with the index and MAC so the recipient can decode it.
     """
+    if src_uid == dst_uid:
+        return {
+            "success": False,
+            "error": "Rejecting message to yourself."
+        }
+
     message = message.encode("utf-8")
     if not csc.yn_prompt("Are you sure you want send a\n{} byte message?".format(len(message))):
         return {
             "success": False,
-            "error": "user rejected pad read request",
+            "error": "User rejected pad read request.",
         }
 
     try:
@@ -71,7 +77,7 @@ def unpackage(src_uid, dst_uid, package_b64):
     if not csc.yn_prompt("Are you sure you want\nto decrypt a message?"):
         return {
             "success": False,
-            "error": "user rejected pad read request",
+            "error": "User rejected pad read request.",
         }
     try:
         pre = crypto.pre_unpackage(package, verbose=True)
@@ -124,6 +130,23 @@ def unpackage(src_uid, dst_uid, package_b64):
             "success": False,
             "error":"Decryption failed.",
         }
+
+def get_next_ref(uid, server_address):
+    """Get the nextref setting for a (user, server) pair.
+    Look up in the local table. Default to 0.
+    """
+    store = JsonStore("nextref.json")
+    store.read()
+    return store.data.get(uid, {}).get(server_address, 0)
+
+def save_next_ref(uid, server_address, nextref):
+    """Save the nextref setting for a (user, server) pair."""
+    store = JsonStore("nextref.json")
+    store.read()
+    uid_entry = store.data.get(uid, {})
+    uid_entry[server_address] = nextref
+    store.data[uid] = uid_entry
+    store.write()
 
 # Returns UID of this device
 def whoami(true_id=None):
