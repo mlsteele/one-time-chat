@@ -97,10 +97,13 @@ class OTC_Client(object):
 
         device_nextref = self.rpc_client.get_next_ref(self.user_id, self.server_address)
 
+        if server_nextref == None and device_nextref == None:
+            return 0
         if server_nextref == None:
             return device_nextref
-        else:
-            return min(server_nextref, device_nextref)
+        if device_nextref == None:
+            return server_nextref
+        return min(server_nextref, device_nextref)
 
     def save_next_ref(self):
         """Save the next ref setting to the device."""

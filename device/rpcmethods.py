@@ -137,7 +137,7 @@ def get_next_ref(uid, server_address):
     """
     store = JsonStore("nextref.json")
     store.read()
-    return store.data.get(uid, {}).get(server_address, 0)
+    return store.data.get(uid, {}).get(server_address, None)
 
 def save_next_ref(uid, server_address, nextref):
     """Save the nextref setting for a (user, server) pair."""
