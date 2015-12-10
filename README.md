@@ -4,6 +4,8 @@ One time pad based communication.
 
 For the project report see [paper/one-time-chat.pdf](paper/one-time-chat.pdf)
 
+For presentation slides which include a nice diagram of the encryption scheme, see [paper/slides.pdf](paper/slides.pdf)
+
 # Security Warning
 
 This is a class project including homebaked crypto.
@@ -33,19 +35,19 @@ Runs on a server and relays messages between clients.
 To run 2 clients on a single computer run the following commands.
 
 ```
-    # Create a pad for use between Alice and Bob (see later for
-    #  more details on pad generation)
-    python device/generate.py "alice" "bob" -m 1
-    # Start the message relay server.
-    python server/server.py 9050
-    # Start Alice's device.
-    python device/main.py 9051 --no-display
-    # Start Bob's device.
-    python device/main.py 9052 --no-display
-    # Start Alice's client.
-    python client/client.py localhost:9050 localhost:9051 alice
-    # Start Bob's client.
-    python client/client.py localhost:9050 localhost:9052 bob
+	# Create a pad for use between Alice and Bob (see later for
+	#  more details on pad generation)
+	python device/generate.py "alice" "bob" -m 1
+	# Start the message relay server.
+	python server/server.py 9050
+	# Start Alice's device.
+	python device/main.py 9051 --no-display
+	# Start Bob's device.
+	python device/main.py 9052 --no-display
+	# Start Alice's client.
+	python client/client.py localhost:9050 localhost:9051 alice
+	# Start Bob's client.
+	python client/client.py localhost:9050 localhost:9052 bob
 ```
 
 ## Setting up the HRNG (RNG Hardware Device) to seed os /dev/random
@@ -67,7 +69,7 @@ HRNGDEVICE=/dev/TrueRNG
 sudo update-rc.d rng-tools enable
 # Start the rng-tools daemon:
 sudo /etc/init.d/rng-tools start
-# At this point, when the HRNG is plugged in, it feeds entropy to 
+# At this point, when the HRNG is plugged in, it feeds entropy to
 #  /dev/random and so /dev/random blocks for a lot less time and
 #  can generate random bits more quickly.
 # If the HRNG is not working for some reason, try unplugging and
